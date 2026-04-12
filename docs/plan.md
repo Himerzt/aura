@@ -8,7 +8,7 @@
 
 ## Trạng Thái Hiện Tại
 
-- [ ] Phần 1 — Docker + Cấu trúc dự án
+- [x] Phần 1 — Docker + Cấu trúc dự án ✓ (2026-04-12)
 - [ ] Phần 2 — Backend Core (memory, prompts, DB)
 - [ ] Phần 3 — 4 Agents + Pipeline
 - [ ] Phần 4 — API Routes FastAPI
@@ -35,10 +35,10 @@
 - Tạo `.env.example`
 
 **Success Criteria:**
-- [ ] `docker-compose up --build` chạy không lỗi
-- [ ] `GET localhost/health` → `{"status": "ok"}`  *(qua nginx)*
-- [ ] `GET localhost/` → Next.js trang cơ bản
-- [ ] `docker-compose logs` không có error đỏ
+- [x] `docker-compose up --build` chạy không lỗi
+- [x] `GET localhost/health` → `{"status": "ok"}`  *(qua nginx)*
+- [x] `GET localhost/` → Next.js trang cơ bản
+- [x] `docker-compose logs` không có error đỏ
 
 ---
 
