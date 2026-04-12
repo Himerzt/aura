@@ -1,3 +1,219 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================================
+   AURA Design System — CSS Variables
+   Default: dark theme ("Calm Luxury Dark")
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-void:        #080810;
+  --bg-base:        #0C0C18;
+  --bg-surface:     #12121F;
+  --bg-elevated:    #1A1A2E;
+  --bg-overlay:     rgba(255, 255, 255, 0.04);
+  --bg-overlay-hover: rgba(255, 255, 255, 0.07);
+
+  /* Borders */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+
+  /* Text */
+  --text-primary:   #F0EDE8;
+  --text-secondary: #9B98A0;
+  --text-tertiary:  #5C5965;
+
+  /* Accents */
+  --amber:          #F5A623;
+  --amber-dim:      rgba(245, 166, 35, 0.15);
+  --amber-glow:     rgba(245, 166, 35, 0.30);
+  --ice:            #A8C4E0;
+  --ice-dim:        rgba(168, 196, 224, 0.12);
+  --sage:           #8FB8A0;
+  --rose:           #D4848A;
+
+  /* Mood Colors */
+  --mood-energized:    #F5A623;
+  --mood-stable:       #A8C4E0;
+  --mood-anxious:      #C4A8E0;
+  --mood-overwhelmed:  #D4848A;
+  --mood-numb:         #5C6B7A;
+
+  /* Aurora ambient layers (dark) */
+  --aurora-1: rgba(168, 196, 224, 0.07);
+  --aurora-2: rgba(245, 166, 35,  0.05);
+  --aurora-3: rgba(196, 168, 224, 0.05);
+
+  /* Spacing */
+  --container-max:  480px;
+  --container-pad:  1.25rem;
+  --card-radius:    16px;
+  --card-padding:   24px;
+}
+
+/* ============================================================
+   LIGHT THEME — "Morning Ivory Luxury"
+   ============================================================ */
+[data-theme="light"] {
+  --bg-void:        #FAF7F2;
+  --bg-base:        #F5F0E8;
+  --bg-surface:     #EDE7DC;
+  --bg-elevated:    #E4DBCC;
+  --bg-overlay:     rgba(0, 0, 0, 0.03);
+  --bg-overlay-hover: rgba(0, 0, 0, 0.06);
+
+  --border-subtle:  rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.10);
+  --border-strong:  rgba(0, 0, 0, 0.16);
+
+  --text-primary:   #1C1714;
+  --text-secondary: #6B6560;
+  --text-tertiary:  #A09890;
+
+  /* Accents same but slightly adjusted */
+  --amber:          #E09520;
+  --amber-dim:      rgba(224, 149, 32, 0.12);
+  --amber-glow:     rgba(224, 149, 32, 0.25);
+  --ice:            #6A9CBD;
+  --ice-dim:        rgba(106, 156, 189, 0.12);
+  --sage:           #6A9B7A;
+  --rose:           #C0686E;
+
+  /* Mood Colors (richer in light mode) */
+  --mood-energized:    #E09520;
+  --mood-stable:       #6A9CBD;
+  --mood-anxious:      #9A78C0;
+  --mood-overwhelmed:  #C0686E;
+  --mood-numb:         #7A8A96;
+
+  /* Aurora ambient layers (light — warmer) */
+  --aurora-1: rgba(106, 156, 189, 0.12);
+  --aurora-2: rgba(224, 149, 32,  0.10);
+  --aurora-3: rgba(154, 120, 192, 0.07);
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+html {
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg-base);
+  min-height: 100vh;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Aurora ambient overlay — subtle moving glow in background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(ellipse 60% 50% at 25% 25%, var(--aurora-1) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 75% 75%, var(--aurora-2) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 65% 10%, var(--aurora-3) 0%, transparent 45%);
+  animation: auroraShift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+/* All content above the aurora layer */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-void); }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+::selection {
+  background-color: var(--amber-dim);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+@layer components {
+
+  /* Glass Card */
+  .glass-card {
+    background: var(--bg-overlay);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--card-radius);
+    padding: var(--card-padding);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .glass-card:hover {
+    background: var(--bg-overlay-hover);
+    border-color: var(--border-strong);
+  }
+
+  /* Gradient text — amber → gold → ice (for AURA logo, headings) */
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      var(--amber) 0%,
+      #F0D878 45%,
+      var(--ice)  100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow text — subtle amber text-shadow for key headings */
+  .glow-text {
+    text-shadow:
+      0 0 20px var(--amber-glow),
+      0 0 40px var(--amber-dim);
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--bg-surface) 25%,
+      var(--bg-elevated) 50%,
+      var(--bg-surface) 75%
+    );
+    background-size: 200% auto;
+    animation: shimmer 1.5s linear infinite;
+    border-radius: 8px;
+  }
+}
+
+/* ============================================================
+   MOOD CLASSES
+   ============================================================ */
+.mood-energized   { --mood-color: var(--mood-energized);   --mood-glow: rgba(245, 166, 35,  0.40); }
+.mood-stable      { --mood-color: var(--mood-stable);      --mood-glow: rgba(168, 196, 224, 0.30); }
+.mood-anxious     { --mood-color: var(--mood-anxious);     --mood-glow: rgba(196, 168, 224, 0.30); }
+.mood-overwhelmed { --mood-color: var(--mood-overwhelmed); --mood-glow: rgba(212, 132, 138, 0.30); }
+.mood-numb        { --mood-color: var(--mood-numb);        --mood-glow: rgba(92,  107, 122, 0.20); }

@@ -9,9 +9,9 @@
 ## Trạng Thái Hiện Tại
 
 - [x] Phần 1 — Docker + Cấu trúc dự án ✓ (2026-04-12)
-- [ ] Phần 2 — Backend Core (memory, prompts, DB)
-- [ ] Phần 3 — 4 Agents + Pipeline
-- [ ] Phần 4 — API Routes FastAPI
+- [x] Phần 2 — Backend Core (memory, prompts, DB) ✓ (2026-04-12)
+- [x] Phần 3 — 4 Agents + Pipeline ✓ (2026-04-12)
+- [x] Phần 4 — API Routes FastAPI ✓ (2026-04-12)
 - [ ] Phần 5 — Design System + Layout Frontend
 - [ ] Phần 6 — Frontend: Onboarding + Morning
 - [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard
@@ -70,10 +70,10 @@
 `backend/data/history.json` — `{}` rỗng
 
 **Success Criteria:**
-- [ ] `memory.py` import được, không lỗi
-- [ ] `load_profile()` và `save_profile()` hoạt động
-- [ ] `init_db()` tạo đúng schema khi gọi
-- [ ] `prompts.py` có đủ 4 hàm, 8 framework
+- [x] `memory.py` import được, không lỗi
+- [x] `load_profile()` và `save_profile()` hoạt động
+- [x] `init_db()` tạo đúng schema khi gọi
+- [x] `prompts.py` có đủ 4 hàm, 8 framework
 
 ---
 
@@ -108,12 +108,12 @@
 - Nếu `risk_flag`: return crisis response, không chạy Agent 2+3
 
 **Success Criteria:**
-- [ ] Agent 1 test script: nhập "hôm nay mệt" → output JSON hợp lệ
-- [ ] Agent 2 test script: nhập wellness JSON → chọn đúng framework
-- [ ] Agent 3 test script: energy=3 → chỉ 1 task, dưới 15 phút
-- [ ] Agent 4 test script: nhập reflection → có tomorrow_question
-- [ ] Pipeline: "tôi không muốn làm gì" → 3 agent chạy tuần tự, JSON cuối hợp lệ
-- [ ] Pipeline: "tôi muốn chết" → dừng tại Agent 1, trả crisis response
+- [x] Agent 1 test script: nhập "hôm nay mệt" → output JSON hợp lệ
+- [x] Agent 2 test script: nhập wellness JSON → chọn đúng framework
+- [x] Agent 3 test script: energy=3 → chỉ 1 task, dưới 15 phút
+- [x] Agent 4 test script: nhập reflection → có tomorrow_question
+- [x] Pipeline: "tôi không muốn làm gì" → 3 agent chạy tuần tự, JSON cuối hợp lệ
+- [x] Pipeline: "tôi muốn chết" → dừng tại Agent 1, trả crisis response
 
 ---
 
@@ -139,11 +139,11 @@ GET  /api/weekly-insight        → trả weekly insight nếu đủ 7 ngày
 Thêm CORS middleware cho localhost:3000.
 
 **Success Criteria:**
-- [ ] `/docs` load được, hiển thị tất cả endpoints
-- [ ] `POST /api/onboarding` với sample data → `profile.json` được tạo
-- [ ] `POST /api/morning` với "hôm nay tôi ổn" → nhận JSON có tasks
-- [ ] `GET /api/today` → trả đúng entry của hôm nay
-- [ ] `GET /api/streak` → trả số ngày streak
+- [x] `/docs` load được, hiển thị tất cả endpoints
+- [x] `POST /api/onboarding` với sample data → `profile.json` được tạo
+- [x] `POST /api/morning` với "hôm nay tôi ổn" → nhận JSON có tasks
+- [x] `GET /api/today` → trả đúng entry của hôm nay
+- [x] `GET /api/streak` → trả số ngày streak
 
 ---
 
