@@ -1,0 +1,12 @@
+﻿.env
+.env.local
+__pycache__/
+*.py[cod]
+backend/data/profile.json
+backend/data/history.json
+node_modules/
+.next/
+*.db
+*.db-wal
+.DS_Store
+*.log
