@@ -57,12 +57,54 @@ section "3. Live API smoke (optional — requires docker-compose up)"
 
 if command -v curl >/dev/null 2>&1; then
   if curl -sf --max-time 2 "http://localhost/health" >/dev/null 2>&1; then
-    ok "nginx + /health reachable"
+    ok "nginx + /health reachable (port 80)"
 
+    # 3a. Frontend rewrite — /api on :3000 must also work
+    if curl -sf --max-time 3 "http://localhost:3000/api/profile" >/dev/null 2>&1; then
+      ok "Next.js rewrite working — :3000/api/* proxies to backend"
+    else
+      bad ":3000/api/* fails — Next.js rewrite missing or frontend stale"
+    fi
+
+    # 3b. GET /api/profile
     if curl -sf --max-time 5 "http://localhost/api/profile" >/dev/null 2>&1; then
       ok "GET /api/profile responds"
     else
-      warn "GET /api/profile failed (maybe profile not created yet — run onboarding)"
+      warn "GET /api/profile failed"
+    fi
+
+    # 3c. POST /api/onboarding (save then read back)
+    payload='{"name":"SelfTest","goal":"smoke test","context":"automated","past_attempts":[],"daily_anchors":["mo mat"],"chronotype":"flexible","support_style":"balanced"}'
+    code=$(curl -s -o /tmp/aura_onb.json -w "%{http_code}" --max-time 5 \
+      -X POST "http://localhost/api/onboarding" \
+      -H "Content-Type: application/json" -d "$payload")
+    if [ "$code" = "200" ]; then
+      ok "POST /api/onboarding returns 200"
+    else
+      bad "POST /api/onboarding returned HTTP $code"
+    fi
+
+    # 3d. POST /api/morning (real Gemini call — depends on external API)
+    # External Gemini latency varies wildly (4s–60s+) so a single timeout
+    # isn't decisive. Try twice before failing.
+    for attempt in 1 2; do
+      code=$(curl -s -o /tmp/aura_morning.json -w "%{http_code}" --max-time 90 \
+        -X POST "http://localhost/api/morning" \
+        -H "Content-Type: application/json" \
+        -d '{"user_input":"hom nay binh thuong"}')
+      [ "$code" = "200" ] && break
+    done
+    if [ "$code" = "200" ]; then
+      if grep -q '"type":"morning"' /tmp/aura_morning.json && \
+         grep -q '"recommended_framework"' /tmp/aura_morning.json && \
+         grep -q '"tasks"' /tmp/aura_morning.json; then
+        ok "POST /api/morning — Agent 1→2→3 pipeline OK (wellness + insight + tasks)"
+      else
+        bad "POST /api/morning shape unexpected"
+      fi
+    else
+      warn "POST /api/morning returned HTTP $code after 2 attempts — Gemini API slow/down?"
+      warn "  Try manually: curl -X POST http://localhost/api/morning -H 'Content-Type: application/json' -d '{\"user_input\":\"test\"}'"
     fi
   else
     warn "localhost unreachable — start stack with: docker-compose up"

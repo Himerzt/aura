@@ -112,6 +112,14 @@ export default function OnboardingPage() {
     // Last answer collected — submit
     setSubmitting(true)
     setTyping(true)
+    setError(null)
+
+    // Optimistic "saving" bubble so user sees something happening
+    setMessages((m) => [
+      ...m,
+      { role: 'aura', text: 'Đang lưu hồ sơ của bạn...' },
+    ])
+
     try {
       const payload = {
         name: answersRef.current.name ?? '',
@@ -135,7 +143,12 @@ export default function OnboardingPage() {
         body: JSON.stringify(payload),
       })
 
-      if (!res.ok) throw new Error('Lưu hồ sơ thất bại')
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(
+          `Lưu hồ sơ thất bại (HTTP ${res.status})${body ? ': ' + body.slice(0, 160) : ''}`
+        )
+      }
 
       setMessages((m) => [
         ...m,
@@ -147,7 +160,11 @@ export default function OnboardingPage() {
       setTyping(false)
       setTimeout(() => router.push('/morning'), 1600)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Đã có lỗi xảy ra')
+      const msg =
+        e instanceof Error
+          ? e.message
+          : 'Không thể kết nối tới máy chủ. Hãy chắc chắn bạn đang mở http://localhost/ (không phải :3000) và docker đang chạy.'
+      setError(msg)
       setSubmitting(false)
       setTyping(false)
     }
