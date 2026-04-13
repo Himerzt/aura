@@ -1,28 +1,19 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Playfair_Display, DM_Sans } from 'next/font/google'
+import { Sora, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { ThemeProvider } from '@/lib/theme-context'
+import { MoodProvider, MoodBody } from '@/lib/mood-context'
 
-// Primary luxury display — headlines, AURA logo
-const cormorant = Cormorant_Garamond({
+// Heading — Sora, wide tracking, weight 600-700
+const sora = Sora({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-cormorant',
+  variable: '--font-heading',
   display: 'swap',
 })
 
-// Secondary serif — insight text, emotional copy
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-display-loaded',
-  display: 'swap',
-})
-
-// UI body
+// Body — DM Sans, weight 400-500
 const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
@@ -40,20 +31,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="vi"
       data-theme="dark"
-      className={`${cormorant.variable} ${playfair.variable} ${dmSans.variable}`}
+      className={`${sora.variable} ${dmSans.variable}`}
     >
-      <body
-        style={{
-          fontFamily: 'var(--font-body-loaded, DM Sans, system-ui, sans-serif)',
-        }}
-      >
+      <body>
         <ThemeProvider>
-          <div className="flex min-h-screen">
-            <Navigation />
-            <main className="flex-1 md:ml-60">
-              {children}
-            </main>
-          </div>
+          <MoodProvider>
+            <MoodBody>
+              {/* Aura background — sits behind everything via z-index: 0 */}
+              <div className="aura-bg" aria-hidden="true" />
+              <div className="flex min-h-screen">
+                <Navigation />
+                <main className="flex-1 md:ml-60">{children}</main>
+              </div>
+            </MoodBody>
+          </MoodProvider>
         </ThemeProvider>
       </body>
     </html>

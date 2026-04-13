@@ -3,155 +3,341 @@
 @tailwind utilities;
 
 /* ============================================================
-   AURA Design System — CSS Variables
-   Default: dark theme ("Calm Luxury Dark")
+   AURA GLOW — Design System (v2.1, Redesign 2026-04-13)
+   Concept: minimal layout (Linear-like) + mood-reactive aura.
+   Fonts: Sora (heading) + DM Sans (body).
+   v2.1 — stronger text contrast, more animations, bolder buttons.
    ============================================================ */
 
 :root,
 [data-theme="dark"] {
-  /* Backgrounds */
-  --bg-void:        #080810;
-  --bg-base:        #0C0C18;
-  --bg-surface:     #12121F;
-  --bg-elevated:    #1A1A2E;
-  --bg-overlay:     rgba(255, 255, 255, 0.04);
-  --bg-overlay-hover: rgba(255, 255, 255, 0.07);
+  /* ── Surfaces ── */
+  --bg-primary:     #0a0a0f;
+  --bg-base:        #0a0a0f;
+  --bg-void:        #07070c;
+  --bg-surface:     #14141f;
+  --bg-elevated:    #1c1c28;
+  --bg-overlay:       rgba(255, 255, 255, 0.06);
+  --bg-overlay-hover: rgba(255, 255, 255, 0.10);
 
-  /* Borders */
+  /* ── Borders ── */
   --border-subtle:  rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-strong:  rgba(255, 255, 255, 0.18);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong:  rgba(255, 255, 255, 0.22);
 
-  /* Text */
-  --text-primary:   #F0EDE8;
-  --text-secondary: #9B98A0;
-  --text-tertiary:  #5C5965;
+  /* ── Text (tuned for 4.5:1+ on bg-primary) ── */
+  --text-primary:   #f2f2f7;
+  --text-secondary: #a8a8c0;
+  --text-tertiary:  #7a7a95;
 
-  /* Accents */
-  --amber:          #F5A623;
-  --amber-dim:      rgba(245, 166, 35, 0.15);
-  --amber-glow:     rgba(245, 166, 35, 0.30);
-  --ice:            #A8C4E0;
-  --ice-dim:        rgba(168, 196, 224, 0.12);
-  --sage:           #8FB8A0;
-  --rose:           #D4848A;
+  /* ── Mood Aura Palette (dark) ── */
+  --mood-energized:        #ff8c42;
+  --mood-energized-soft:   #ffb347;
+  --mood-stable:           #64b5f6;
+  --mood-stable-soft:      #a7d8ff;
+  --mood-anxious:          #b388ff;
+  --mood-anxious-soft:     #80cbc4;
+  --mood-overwhelmed:      #ef5350;
+  --mood-overwhelmed-soft: #ff8a80;
+  --mood-numb:             #78909c;
+  --mood-numb-soft:        #b0bec5;
 
-  /* Mood Colors */
-  --mood-energized:    #F5A623;
-  --mood-stable:       #A8C4E0;
-  --mood-anxious:      #C4A8E0;
-  --mood-overwhelmed:  #D4848A;
-  --mood-numb:         #5C6B7A;
+  /* Button text color — dark on bright mood gradient */
+  --btn-text: #0a0a0f;
 
-  /* Aurora ambient layers (dark) */
-  --aurora-1: rgba(168, 196, 224, 0.07);
-  --aurora-2: rgba(245, 166, 35,  0.05);
-  --aurora-3: rgba(196, 168, 224, 0.05);
+  /* ── Active mood (set by .mood-* on <body>) ── */
+  --mood-color:      var(--mood-stable);
+  --mood-color-soft: var(--mood-stable-soft);
+  --mood-glow:       rgba(100, 181, 246, 0.45);
+  --aura-speed:      22s;
+  --aura-blur:       90px;
+  --aura-opacity:    0.55;
 
-  /* Spacing */
-  --container-max:  480px;
-  --container-pad:  1.25rem;
+  /* ── Shape ── */
   --card-radius:    16px;
   --card-padding:   24px;
+  --container-max:  640px;
+  --container-pad:  1.25rem;
 }
 
 /* ============================================================
-   LIGHT THEME — "Morning Ivory Luxury"
+   LIGHT MODE — "Paper Glow"
    ============================================================ */
 [data-theme="light"] {
-  --bg-void:        #FAF7F2;
-  --bg-base:        #F5F0E8;
-  --bg-surface:     #EDE7DC;
-  --bg-elevated:    #E4DBCC;
-  --bg-overlay:     rgba(0, 0, 0, 0.03);
-  --bg-overlay-hover: rgba(0, 0, 0, 0.06);
+  --bg-primary:     #f5f4ef;
+  --bg-base:        #f5f4ef;
+  --bg-void:        #ebeae4;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #fbfaf6;
+  --bg-overlay:       rgba(255, 255, 255, 0.72);
+  --bg-overlay-hover: rgba(255, 255, 255, 0.88);
 
-  --border-subtle:  rgba(0, 0, 0, 0.06);
-  --border-default: rgba(0, 0, 0, 0.10);
-  --border-strong:  rgba(0, 0, 0, 0.16);
+  --border-subtle:  rgba(20, 20, 40, 0.07);
+  --border-default: rgba(20, 20, 40, 0.14);
+  --border-strong:  rgba(20, 20, 40, 0.28);
 
-  --text-primary:   #1C1714;
-  --text-secondary: #6B6560;
-  --text-tertiary:  #A09890;
+  /* Text (tuned for 4.5:1+ on bg-primary) */
+  --text-primary:   #13131f;
+  --text-secondary: #4f4f63;
+  --text-tertiary:  #74748a;
 
-  /* Accents same but slightly adjusted */
-  --amber:          #E09520;
-  --amber-dim:      rgba(224, 149, 32, 0.12);
-  --amber-glow:     rgba(224, 149, 32, 0.25);
-  --ice:            #6A9CBD;
-  --ice-dim:        rgba(106, 156, 189, 0.12);
-  --sage:           #6A9B7A;
-  --rose:           #C0686E;
+  /* Button text stays dark — vivid mood gradient is still bright enough */
+  --btn-text: #0a0a0f;
 
-  /* Mood Colors (richer in light mode) */
-  --mood-energized:    #E09520;
-  --mood-stable:       #6A9CBD;
-  --mood-anxious:      #9A78C0;
-  --mood-overwhelmed:  #C0686E;
-  --mood-numb:         #7A8A96;
-
-  /* Aurora ambient layers (light — warmer) */
-  --aurora-1: rgba(106, 156, 189, 0.12);
-  --aurora-2: rgba(224, 149, 32,  0.10);
-  --aurora-3: rgba(154, 120, 192, 0.07);
+  --aura-opacity:   0.32;
+  --aura-blur:      100px;
 }
 
 /* ============================================================
-   BASE STYLES
+   BASE
    ============================================================ */
 html {
-  background-color: var(--bg-void);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
 }
 
 body {
-  background-color: var(--bg-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 100vh;
   font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
   overflow-x: hidden;
+  transition: background-color 0.8s ease, color 0.8s ease;
 }
 
-/* Aurora ambient overlay — subtle moving glow in background */
-body::before {
-  content: '';
+/* Headings default to Sora */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Sora', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+p, span, li, label { color: inherit; }
+
+/* Default link — mood-reactive */
+a { color: var(--mood-color); text-decoration: none; }
+a:hover { filter: brightness(1.15); }
+
+/* ============================================================
+   MOOD AURA BACKGROUND
+   ============================================================ */
+.aura-bg {
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background:
-    radial-gradient(ellipse 60% 50% at 25% 25%, var(--aurora-1) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 75% 75%, var(--aurora-2) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 35% at 65% 10%, var(--aurora-3) 0%, transparent 45%);
-  animation: auroraShift 28s ease-in-out infinite alternate;
+  inset: -20%;
   pointer-events: none;
   z-index: 0;
-  will-change: transform;
+  filter: blur(var(--aura-blur));
+  opacity: var(--aura-opacity);
+  transition: opacity 0.8s ease, filter 0.8s ease;
+  will-change: transform, opacity;
 }
 
-/* All content above the aurora layer */
+.aura-bg::before,
+.aura-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+
+.aura-bg::before {
+  background:
+    radial-gradient(closest-side, var(--mood-color) 0%, transparent 70%) 20% 30% / 60% 55%;
+  animation: auraDrift var(--aura-speed) ease-in-out infinite alternate;
+}
+
+.aura-bg::after {
+  background:
+    radial-gradient(closest-side, var(--mood-color-soft) 0%, transparent 70%) 75% 70% / 55% 50%;
+  animation: auraDrift calc(var(--aura-speed) * 1.4) ease-in-out infinite alternate-reverse;
+}
+
+/* Grain texture — only for anxious mood */
+.mood-anxious .aura-bg {
+  animation: auraJitter 2.8s ease-in-out infinite;
+}
+.mood-anxious .aura-bg::after {
+  background-image:
+    radial-gradient(closest-side, var(--mood-color-soft) 0%, transparent 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>");
+  background-size: 55% 50%, 200px 200px;
+  background-position: 75% 70%, 0 0;
+  background-repeat: no-repeat, repeat;
+}
+
+/* Content above aura */
 body > * {
   position: relative;
   z-index: 1;
 }
 
 /* ============================================================
-   CUSTOM SCROLLBAR
+   MOOD CLASSES
    ============================================================ */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg-void); }
-::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+.mood-energized {
+  --mood-color:      var(--mood-energized);
+  --mood-color-soft: var(--mood-energized-soft);
+  --mood-glow:       rgba(255, 140, 66, 0.55);
+  --aura-speed:      14s;
+  --aura-opacity:    0.65;
+}
+.mood-stable {
+  --mood-color:      var(--mood-stable);
+  --mood-color-soft: var(--mood-stable-soft);
+  --mood-glow:       rgba(100, 181, 246, 0.45);
+  --aura-speed:      22s;
+  --aura-opacity:    0.55;
+}
+.mood-anxious {
+  --mood-color:      var(--mood-anxious);
+  --mood-color-soft: var(--mood-anxious-soft);
+  --mood-glow:       rgba(179, 136, 255, 0.45);
+  --aura-speed:      18s;
+  --aura-opacity:    0.58;
+}
+.mood-overwhelmed {
+  --mood-color:      var(--mood-overwhelmed);
+  --mood-color-soft: var(--mood-overwhelmed-soft);
+  --mood-glow:       rgba(239, 83, 80, 0.50);
+  --aura-speed:      12s;
+  --aura-opacity:    0.62;
+}
+.mood-numb {
+  --mood-color:      var(--mood-numb);
+  --mood-color-soft: var(--mood-numb-soft);
+  --mood-glow:       rgba(120, 144, 156, 0.30);
+  --aura-speed:      48s;
+  --aura-opacity:    0.38;
+  --aura-blur:       120px;
+}
 
 /* ============================================================
-   SELECTION
+   KEYFRAME LIBRARY
    ============================================================ */
+@keyframes auraDrift {
+  0%   { transform: translate(0%, 0%)   scale(1); }
+  50%  { transform: translate(3%, -4%)  scale(1.08); }
+  100% { transform: translate(-3%, 4%)  scale(0.96); }
+}
+
+@keyframes auraJitter {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(1px, -1px); }
+  50%      { transform: translate(-1px, 1px); }
+  75%      { transform: translate(1px, 1px); }
+}
+
+@keyframes gradientPan {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.35; }
+  30%           { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.9; }
+  50%      { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--mood-glow),  0 6px 24px var(--mood-glow); }
+  50%      { box-shadow: 0 0 0 8px transparent,      0 10px 40px var(--mood-glow); }
+}
+
+@keyframes sheen {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  60%  { transform: translateX(220%)  skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+
+@keyframes sonarPing {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.6); opacity: 0;   }
+  100% { transform: scale(1.6); opacity: 0;   }
+}
+
+@keyframes rotateSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-1.5deg); }
+  75%      { transform: rotate(1.5deg); }
+}
+
+@keyframes textShimmer {
+  0%   { background-position: -150% center; }
+  100% { background-position:  250% center; }
+}
+
+/* ============================================================
+   SCROLLBAR + SELECTION
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--mood-color); }
+
 ::selection {
-  background-color: var(--amber-dim);
+  background-color: var(--mood-glow);
   color: var(--text-primary);
+}
+
+/* Reduce motion — respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ============================================================
@@ -159,43 +345,233 @@ body > * {
    ============================================================ */
 @layer components {
 
-  /* Glass Card */
+  /* ── Glass card ── */
   .glass-card {
+    position: relative;
     background: var(--bg-overlay);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
     border: 1px solid var(--border-default);
     border-radius: var(--card-radius);
     padding: var(--card-padding);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    color: var(--text-primary);
+    transition: background 0.3s ease, border-color 0.3s ease,
+                box-shadow 0.4s ease, transform 0.3s ease;
   }
-
   .glass-card:hover {
     background: var(--bg-overlay-hover);
-    border-color: var(--border-strong);
+    border-color: var(--mood-color);
+    box-shadow: 0 0 36px var(--mood-glow),
+                0 8px 32px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
   }
 
-  /* Gradient text — amber → gold → ice (for AURA logo, headings) */
+  /* ── Surface card ── */
+  .surface-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--card-radius);
+    padding: var(--card-padding);
+    color: var(--text-primary);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .surface-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+    transform: translateY(-1px);
+  }
+
+  /* ── AURA logo — gradient sweep ── */
   .gradient-text {
     background: linear-gradient(
-      135deg,
-      var(--amber) 0%,
-      #F0D878 45%,
-      var(--ice)  100%
+      90deg,
+      var(--mood-color) 0%,
+      var(--mood-color-soft) 25%,
+      var(--text-primary) 50%,
+      var(--mood-color-soft) 75%,
+      var(--mood-color) 100%
     );
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: transparent;
+    animation: gradientPan 10s linear infinite;
   }
 
-  /* Glow text — subtle amber text-shadow for key headings */
-  .glow-text {
-    text-shadow:
-      0 0 20px var(--amber-glow),
-      0 0 40px var(--amber-dim);
+  /* ── Underline input ── */
+  .input-underline {
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--border-default);
+    padding: 10px 2px;
+    color: var(--text-primary);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 1rem;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .input-underline:focus {
+    border-bottom-color: var(--mood-color);
+    box-shadow: 0 2px 0 0 var(--mood-color),
+                0 8px 24px -12px var(--mood-glow);
+  }
+  .input-underline::placeholder { color: var(--text-tertiary); }
+
+  /* ============================================================
+     BUTTONS — bolder, more prominent
+     ============================================================ */
+
+  /* Primary mood button */
+  .btn-mood {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1.5px solid color-mix(in srgb, var(--mood-color) 70%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--mood-color) 0%,
+      var(--mood-color-soft) 100%
+    );
+    color: var(--btn-text);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow:
+      0 4px 16px var(--mood-glow),
+      0 12px 40px -8px var(--mood-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.35s ease, filter 0.2s ease;
+  }
+  .btn-mood::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 100%
+    );
+    transform: translateX(-120%) skewX(-18deg);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .btn-mood:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.015);
+    filter: brightness(1.08) saturate(1.1);
+    box-shadow:
+      0 6px 24px var(--mood-glow),
+      0 18px 56px -8px var(--mood-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .btn-mood:hover:not(:disabled)::before {
+    animation: sheen 0.9s ease forwards;
+  }
+  .btn-mood:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+  .btn-mood:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    filter: grayscale(0.2);
   }
 
-  /* Skeleton shimmer */
+  /* Ghost button — outline that lights up on hover */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--bg-overlay);
+    color: var(--text-primary);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(10px);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--mood-color);
+    color: var(--mood-color);
+    box-shadow: 0 0 24px var(--mood-glow);
+    transform: translateY(-1px);
+  }
+  .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Danger button */
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(239, 83, 80, 0.6);
+    background: linear-gradient(135deg, #ef5350, #ff7043);
+    color: #fff;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(239, 83, 80, 0.35);
+    transition: all 0.25s ease;
+  }
+  .btn-danger:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 32px rgba(239, 83, 80, 0.5);
+  }
+
+  /* ── Typing indicator ── */
+  .typing-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mood-color);
+    box-shadow: 0 0 10px var(--mood-glow);
+    animation: typingDot 1.4s ease-in-out infinite;
+  }
+
+  /* ── Chat bubbles ── */
+  .bubble-user {
+    background: color-mix(in srgb, var(--mood-color) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mood-color) 38%, transparent);
+    border-radius: 18px 18px 4px 18px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    max-width: 85%;
+    margin-left: auto;
+    box-shadow: 0 4px 20px -6px var(--mood-glow);
+  }
+  .bubble-aura {
+    background: var(--bg-overlay);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid var(--border-default);
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    max-width: 85%;
+  }
+
+  /* ── Skeleton shimmer ── */
   .skeleton {
     background: linear-gradient(
       90deg,
@@ -207,13 +583,59 @@ body > * {
     animation: shimmer 1.5s linear infinite;
     border-radius: 8px;
   }
-}
 
-/* ============================================================
-   MOOD CLASSES
-   ============================================================ */
-.mood-energized   { --mood-color: var(--mood-energized);   --mood-glow: rgba(245, 166, 35,  0.40); }
-.mood-stable      { --mood-color: var(--mood-stable);      --mood-glow: rgba(168, 196, 224, 0.30); }
-.mood-anxious     { --mood-color: var(--mood-anxious);     --mood-glow: rgba(196, 168, 224, 0.30); }
-.mood-overwhelmed { --mood-color: var(--mood-overwhelmed); --mood-glow: rgba(212, 132, 138, 0.30); }
-.mood-numb        { --mood-color: var(--mood-numb);        --mood-glow: rgba(92,  107, 122, 0.20); }
+  /* ============================================================
+     ANIMATION UTILITIES — drop in anywhere
+     ============================================================ */
+  .anim-fade-in      { animation: fadeIn     0.5s ease forwards; }
+  .anim-fade-in-up   { animation: fadeInUp   0.6s ease forwards; }
+  .anim-fade-in-scale{ animation: fadeInScale 0.5s ease forwards; }
+  .anim-slide-left   { animation: slideInLeft  0.5s ease forwards; }
+  .anim-slide-right  { animation: slideInRight 0.5s ease forwards; }
+  .anim-float        { animation: floatY     4s  ease-in-out infinite; }
+  .anim-breathe      { animation: breathe    5s  ease-in-out infinite; }
+  .anim-pulse-glow   { animation: pulseGlow  2.4s ease-in-out infinite; }
+  .anim-rotate-slow  { animation: rotateSlow 24s linear infinite; }
+  .anim-wobble       { animation: wobble     1.2s ease-in-out infinite; }
+
+  /* Stagger helpers — add .stagger > * and children fade in 80ms apart */
+  .stagger > *              { opacity: 0; animation: fadeInUp 0.6s ease forwards; }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.35s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.45s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.55s; }
+  .stagger > *:nth-child(7) { animation-delay: 0.65s; }
+  .stagger > *:nth-child(8) { animation-delay: 0.75s; }
+
+  /* Hover lift — reusable */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px var(--mood-glow);
+  }
+
+  /* Hover glow text */
+  .hover-glow-text { transition: text-shadow 0.3s ease, color 0.3s ease; }
+  .hover-glow-text:hover {
+    color: var(--mood-color);
+    text-shadow: 0 0 16px var(--mood-glow);
+  }
+
+  /* Sonar ping — wraps anything for attention-pulse */
+  .sonar-ping {
+    position: relative;
+  }
+  .sonar-ping::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--mood-color);
+    animation: sonarPing 2s ease-out infinite;
+    pointer-events: none;
+  }
+}

@@ -11,6 +11,7 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Badge from '@/components/ui/Badge'
+import { useMood, type MoodState } from '@/lib/mood-context'
 
 const MOCK_TASK = {
   title: 'Đi bộ 15 phút sau bữa trưa',
@@ -20,34 +21,80 @@ const MOCK_TASK = {
   completed: false,
 }
 
+const MOODS: MoodState[] = ['energized', 'stable', 'anxious', 'overwhelmed', 'numb']
+
 export default function Home() {
+  const { mood, setMood } = useMood()
   return (
     <div
       style={{
         minHeight: '100vh',
-        background: 'var(--bg-base)',
         padding: '40px 24px',
         paddingBottom: '80px',
       }}
     >
       {/* Header */}
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div
+        className="stagger"
+        style={{ maxWidth: 640, margin: '0 auto' }}
+      >
         <h1
-          className="gradient-text animate-glow-text"
+          className="gradient-text anim-fade-in-up"
           style={{
-            fontFamily: 'var(--font-cormorant, Playfair Display, serif)',
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
             fontSize: '3rem',
-            fontWeight: 600,
-            letterSpacing: '0.1em',
+            fontWeight: 700,
+            letterSpacing: '0.18em',
             marginBottom: 4,
             lineHeight: 1,
           }}
         >
           AURA
         </h1>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', marginBottom: 40, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Design System Preview — Phần 5
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', marginBottom: 24, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Design System Preview — v2.1
         </p>
+
+        {/* ── Mood Preview Controls ── */}
+        <div
+          className="glass-card"
+          style={{
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            padding: '12px 14px',
+            marginBottom: 32,
+            alignItems: 'center',
+          }}
+        >
+          <span style={{
+            fontSize: '0.7rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            color: 'var(--text-tertiary)',
+            marginRight: 4,
+          }}>
+            Mood
+          </span>
+          {MOODS.map((m) => {
+            const active = mood === m
+            return (
+              <button
+                key={m}
+                onClick={() => setMood(m)}
+                className={active ? 'btn-mood' : 'btn-ghost'}
+                style={{
+                  padding: '8px 14px',
+                  minHeight: 34,
+                  fontSize: '0.75rem',
+                  borderRadius: 999,
+                }}
+              >
+                {m}
+              </button>
+            )
+          })}
+        </div>
 
         {/* ── Section: MoodOrb ── */}
         <Section title="MoodOrb — 5 Mood States">

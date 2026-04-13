@@ -74,12 +74,12 @@ export default function Navigation() {
         <div className="px-6 pt-8 pb-6">
           <Link href="/" style={{ textDecoration: 'none' }}>
             <span
-              className="gradient-text animate-glow-text"
+              className="gradient-text"
               style={{
-                fontFamily: 'var(--font-cormorant, Playfair Display, serif)',
+                fontFamily: 'var(--font-heading, Sora, system-ui)',
                 fontSize: '1.75rem',
-                fontWeight: 600,
-                letterSpacing: '0.12em',
+                fontWeight: 700,
+                letterSpacing: '0.18em',
                 display: 'block',
                 lineHeight: 1,
               }}

@@ -1,339 +1,235 @@
-# AURA Design System
-## "Calm Luxury Dark" — Specification cho Frontend
+# AURA Design System — "AURA GLOW" v2.1
 
-> Đọc file này trước khi viết bất kỳ UI code nào.
+> Rewrite 2026-04-13. Đọc file này trước khi viết bất kỳ UI code nào.
+> File chính: `frontend/app/globals.css`, `frontend/tailwind.config.ts`, `frontend/lib/mood-context.tsx`.
 
 ---
 
 ## 1. Triết Lý Thiết Kế
 
-**Core feeling:** Như đang ngồi trong một phòng tối yên tĩnh lúc 2 giờ sáng — không lo lắng, không bị phán xét. Ấm áp nhưng không ồn ào.
+**Core feeling:** Linear.app gặp northern lights. Layout cực tối giản, grid rộng rãi, không icon lộn xộn. Toàn bộ background là một hào quang (aura) mềm đổi màu + tốc độ theo `mood_state` của user. Giao diện như đang **thở** theo tâm trạng.
 
-**Không phải:** Productivity app màu trắng chói lọi. Health app màu xanh lá cây nhựa. AI chatbot màu tím gradient.
-
-**Là:** Minimalist luxury. Mỗi pixel có lý do tồn tại. Cảm giác như app được thiết kế riêng cho bạn.
+**Không phải:** Productivity app chói lọi. Health app xanh nhựa. Chatbot tím gradient sến.
+**Là:** Ambient, minimal, mood-reactive. Mỗi pixel có lý do.
 
 ---
 
-## 2. Color Palette
+## 2. Color Tokens (CSS variables)
+
+### 2.1 Surfaces + Text — contrast ≥ 4.5:1
+
+| Token | Dark | Light |
+|-------|------|-------|
+| `--bg-primary`      | `#0a0a0f` | `#f5f4ef` |
+| `--bg-surface`      | `#14141f` | `#ffffff` |
+| `--bg-elevated`     | `#1c1c28` | `#fbfaf6` |
+| `--bg-overlay`      | `rgba(255,255,255,0.06)` | `rgba(255,255,255,0.72)` |
+| `--bg-overlay-hover`| `rgba(255,255,255,0.10)` | `rgba(255,255,255,0.88)` |
+| `--border-subtle`   | `rgba(255,255,255,0.06)` | `rgba(20,20,40,0.07)` |
+| `--border-default`  | `rgba(255,255,255,0.12)` | `rgba(20,20,40,0.14)` |
+| `--border-strong`   | `rgba(255,255,255,0.22)` | `rgba(20,20,40,0.28)` |
+| `--text-primary`    | `#f2f2f7` | `#13131f` |
+| `--text-secondary`  | `#a8a8c0` | `#4f4f63` |
+| `--text-tertiary`   | `#7a7a95` | `#74748a` |
+
+**Lưu ý:** Light mode `--bg-overlay` là trắng đục (0.72 alpha), không phải bóng đen — để glass-card nổi rõ trên nền `#f5f4ef`.
+
+### 2.2 Mood palette (5 states)
+
+| Mood | `--mood-color` | `--mood-color-soft` | `--aura-speed` | `--aura-opacity` | Cảm giác |
+|------|----------------|---------------------|---------------|------------------|----------|
+| `energized`   | `#ff8c42` | `#ffb347` | 14s | 0.65 | Cháy nhẹ, dopamine buổi sáng |
+| `stable`      | `#64b5f6` | `#a7d8ff` | 22s | 0.55 | Biển lặng, nhịp thở chậm |
+| `anxious`     | `#b388ff` | `#80cbc4` | 18s | 0.58 | Tím rung + grain SVG |
+| `overwhelmed` | `#ef5350` | `#ff8a80` | 12s | 0.62 | Đỏ dồn dập |
+| `numb`        | `#78909c` | `#b0bec5` | 48s | 0.38 | Gần như chìm vào nền |
+
+`--mood-glow` là alpha version của `--mood-color` (~0.35-0.55) dùng cho box-shadow và selection.
+
+### 2.3 Typography
+
+- **Heading** — `Sora` (Google), weight 600-700. Logo: `letter-spacing: 0.18em`.
+- **Body** — `DM Sans`, weight 400-500.
+- **Cấm:** Inter, Roboto, Arial, Cormorant, Playfair.
+
+---
+
+## 3. Mood Aura Background
+
+### 3.1 Cơ chế
+`<div class="aura-bg" aria-hidden>` được render ngay dưới `<body>`, fixed fullscreen, z-index 0, `filter: blur(90-120px)`, `opacity` theo mood. Pseudo-element `::before` + `::after` chứa 2 radial-gradient blob drift ngược chiều qua keyframe `auraDrift`, tốc độ lấy từ CSS var `--aura-speed`.
 
 ```css
-/* === BACKGROUNDS === */
---bg-void:        #080810;   /* Deepest background */
---bg-base:        #0C0C18;   /* Main app background */
---bg-surface:     #12121F;   /* Card surfaces */
---bg-elevated:    #1A1A2E;   /* Elevated elements, hover states */
---bg-overlay:     rgba(255, 255, 255, 0.04);  /* Glass overlay */
-
-/* === BORDERS === */
---border-subtle:  rgba(255, 255, 255, 0.06);
---border-default: rgba(255, 255, 255, 0.10);
---border-strong:  rgba(255, 255, 255, 0.18);
-
-/* === TEXT === */
---text-primary:   #F0EDE8;   /* Near-white, warm tint */
---text-secondary: #9B98A0;   /* Muted body text */
---text-tertiary:  #5C5965;   /* Placeholder, disabled */
-
-/* === ACCENTS === */
---amber:          #F5A623;   /* Warm action color */
---amber-dim:      rgba(245, 166, 35, 0.15);
---amber-glow:     rgba(245, 166, 35, 0.30);
-
---ice:            #A8C4E0;   /* Cool secondary accent */
---ice-dim:        rgba(168, 196, 224, 0.12);
-
---sage:           #8FB8A0;   /* Positive/completion states */
---rose:           #D4848A;   /* Warning/risk states */
-
-/* === MOOD COLORS (used for MoodOrb and badges) === */
---mood-energized:    #F5A623;   /* Warm amber */
---mood-stable:       #A8C4E0;   /* Cool ice blue */
---mood-anxious:      #C4A8E0;   /* Soft violet */
---mood-overwhelmed:  #D4848A;   /* Muted rose */
---mood-numb:         #5C6B7A;   /* Cold slate */
+.aura-bg::before { background: radial-gradient(closest-side, var(--mood-color), transparent 70%) 20% 30% / 60% 55%; }
+.aura-bg::after  { background: radial-gradient(closest-side, var(--mood-color-soft), transparent 70%) 75% 70% / 55% 50%; }
 ```
+
+### 3.2 Mood class apply
+`MoodBody` (`frontend/lib/mood-context.tsx`) toggle class `mood-<state>` lên `<body>` mỗi khi `useMood().mood` đổi. Mỗi class override `--mood-color`, `--mood-color-soft`, `--mood-glow`, `--aura-speed`, `--aura-opacity` — toàn bộ CSS var con resolve lại mà không cần re-render React.
+
+`mood-anxious` override thêm: `animation: auraJitter 2.8s` + grain SVG data URI (feTurbulence).
+`mood-numb` override `--aura-blur: 120px` để chìm thêm.
+
+Transition mood: `transition: opacity 0.8s ease, filter 0.8s ease`.
 
 ---
 
-## 3. Typography
+## 4. Animation Library
 
-```css
-/* Import trong layout.tsx */
-/* Playfair Display: 400, 600 — Headlines, emotional copy */
-/* DM Sans: 300, 400, 500 — Body, UI text */
+Tất cả keyframe khai báo trong `globals.css`. Utility class `.anim-*` dùng trực tiếp trong JSX.
 
---font-display: 'Playfair Display', Georgia, serif;
---font-body:    'DM Sans', system-ui, sans-serif;
+| Keyframe | Utility class | Dùng khi | Duration |
+|----------|---------------|----------|----------|
+| `auraDrift`    | (auto, `.aura-bg`)        | 2 blob background | var(--aura-speed) |
+| `auraJitter`   | (auto, `.mood-anxious`)   | Rung anxious | 2.8s |
+| `gradientPan`  | `.gradient-text`          | Logo sweep | 10s |
+| `typingDot`    | `.typing-dot`             | Chat indicator | 1.4s |
+| `shimmer`      | `.skeleton`               | Skeleton loading | 1.5s |
+| `fadeIn`       | `.anim-fade-in`           | Entry nhẹ | 0.5s |
+| `fadeInUp`     | `.anim-fade-in-up`        | Entry section | 0.6s |
+| `fadeInScale`  | `.anim-fade-in-scale`     | Card reveal | 0.5s |
+| `slideInLeft`  | `.anim-slide-left`        | Bubble aura | 0.5s |
+| `slideInRight` | `.anim-slide-right`       | Bubble user | 0.5s |
+| `floatY`       | `.anim-float`             | Orb/decor nhẹ nhàng | 4s loop |
+| `breathe`      | `.anim-breathe`           | MoodOrb breathing | 5s loop |
+| `pulseGlow`    | `.anim-pulse-glow`        | CTA attention | 2.4s loop |
+| `sheen`        | (auto, `.btn-mood:hover`) | Sweep shine button | 0.9s once |
+| `sonarPing`    | `.sonar-ping`             | Attention ring | 2s loop |
+| `rotateSlow`   | `.anim-rotate-slow`       | Decor rotate | 24s loop |
+| `wobble`       | `.anim-wobble`            | Error shake | 1.2s loop |
 
-/* Scale */
---text-xs:   0.75rem;   /* 12px — Labels, timestamps */
---text-sm:   0.875rem;  /* 14px — Secondary text */
---text-base: 1rem;      /* 16px — Body */
---text-lg:   1.125rem;  /* 18px — Emphasized body */
---text-xl:   1.25rem;   /* 20px — Card titles */
---text-2xl:  1.5rem;    /* 24px — Section headers */
---text-3xl:  1.875rem;  /* 30px — Page titles */
---text-4xl:  2.25rem;   /* 36px — Hero text */
+### 4.1 Stagger helper
+```html
+<div class="stagger">
+  <Card />  <!-- fade-in-up delay 0.05s -->
+  <Card />  <!-- delay 0.15s -->
+  <Card />  <!-- delay 0.25s -->
+</div>
 ```
+Hỗ trợ tối đa 8 con.
 
-**Usage rules:**
-- `font-display` cho: page titles, mood labels, insight headers, encouragement copy
-- `font-body` cho: tất cả còn lại
-- Heading weight: 600 (display) hoặc 500 (body)
-- Body weight: 300 cho long-form, 400 cho UI
+### 4.2 Hover helpers
+- `.hover-lift` — translateY(-3px) + box-shadow `0 12px 32px var(--mood-glow)`
+- `.hover-glow-text` — text color → mood-color + text-shadow mood-glow
+
+### 4.3 Accessibility
+`@media (prefers-reduced-motion: reduce)` → tất cả animation giảm về 0.01ms. Người dùng bật "reduce motion" trong OS sẽ không bị rung, không bị drift.
 
 ---
 
-## 4. Spacing & Layout
+## 5. Component Specs
 
-```css
---space-1:  0.25rem;   /* 4px */
---space-2:  0.5rem;    /* 8px */
---space-3:  0.75rem;   /* 12px */
---space-4:  1rem;      /* 16px */
---space-6:  1.5rem;    /* 24px */
---space-8:  2rem;      /* 32px */
---space-12: 3rem;      /* 48px */
---space-16: 4rem;      /* 64px */
-
-/* Container */
---container-max:  480px;   /* Mobile-first, single column */
---container-pad:  1.25rem; /* 20px horizontal padding */
-
-/* Card */
---card-radius:  16px;
---card-padding: 24px;
+### 5.1 Glass Card (`.glass-card`)
 ```
+backdrop-filter: blur(16px) saturate(140%)
+background: var(--bg-overlay)
+border: 1px var(--border-default)
+border-radius: 16px
+padding: 24px
+hover: border-color mood, translateY(-2px), box-shadow 0 0 36px var(--mood-glow)
+```
+
+### 5.2 Surface Card (`.surface-card`)
+Solid `var(--bg-surface)`, dùng khi cần opacity 100% (bảng data, form dài).
+
+### 5.3 Button Primary (`.btn-mood`) — **prominence-focused**
+```
+padding: 14px 28px
+min-height: 48px
+border-radius: 14px
+border: 1.5px solid color-mix(mood 70%, transparent)
+background: linear-gradient(135deg, var(--mood-color), var(--mood-color-soft))
+color: var(--btn-text)  /* #0a0a0f cả 2 mode */
+font-weight: 600
+box-shadow:
+  0 4px 16px var(--mood-glow),
+  0 12px 40px -8px var(--mood-glow),
+  inset 0 1px 0 rgba(255,255,255,0.3)
+```
+**Hover:** translateY(-2px) + scale(1.015) + brightness(1.08) + sheen sweep qua `::before`.
+**Active:** scale(0.98).
+**Disabled:** opacity 0.45, grayscale 0.2.
+
+### 5.4 Button Ghost (`.btn-ghost`)
+Border `--border-strong`, background overlay blur. Hover → border + text đổi thành `--mood-color`, glow 24px.
+
+### 5.5 Button Danger (`.btn-danger`)
+Gradient 135° `#ef5350 → #ff7043`, text trắng, shadow đỏ.
+
+### 5.6 Input Underline (`.input-underline`)
+Transparent bg, `border-bottom: 1.5px var(--border-default)`. Focus → border-bottom mood + shadow 24px glow.
+
+### 5.7 Chat Bubbles
+- `.bubble-user` — phải, `color-mix(mood 22%, transparent)`, border tint mood 38%, radius 18/18/4/18, shadow mood
+- `.bubble-aura` — trái, glassmorphism, border default, radius 18/18/18/4
+
+### 5.8 Typing dot (`.typing-dot`)
+7px circle, `background: var(--mood-color)`, `box-shadow: 0 0 10px var(--mood-glow)`, keyframe `typingDot 1.4s`.
+
+### 5.9 Gradient Text (`.gradient-text`)
+Dùng cho logo AURA. Background-clip text, gradient 5 stop đi qua `var(--text-primary)` giữa nên không bao giờ biến mất trên light/dark. Animation `gradientPan 10s`.
 
 ---
 
-## 5. Glass Morphism Cards
+## 6. Spacing + Layout
 
-```css
-/* Cách dùng cho tất cả card components */
-.glass-card {
-  background: var(--bg-overlay);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-default);
-  border-radius: var(--card-radius);
-  padding: var(--card-padding);
-}
-
-/* Hover state */
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--border-strong);
-  transition: all 0.2s ease;
-}
-```
+- **Container max-width:** 640px (onboarding, morning, evening). Dashboard có thể rộng hơn.
+- **Card padding:** 24px default.
+- **Section gap:** ≥ 24px.
+- **Scrollbar:** 6px, thumb `--border-strong`, hover → `--mood-color`.
 
 ---
 
-## 6. Animations
-
-```css
-/* Keyframes cần add vào tailwind.config.ts */
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px var(--glow-color, var(--amber-glow)); }
-  50%       { box-shadow: 0 0 40px var(--glow-color, var(--amber-glow)),
-                           0 0 80px var(--glow-color, var(--amber-dim)); }
-}
-
-@keyframes auraFloat {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50%       { transform: translateY(-6px) scale(1.02); }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes checkPop {
-  0%   { transform: scale(0); }
-  60%  { transform: scale(1.3); }
-  100% { transform: scale(1); }
-}
-```
-
-**Stagger pattern cho result reveal:**
-```tsx
-// Dùng animation-delay để stagger
-<div style={{ animationDelay: '0ms' }}>   {/* MoodOrb */}
-<div style={{ animationDelay: '200ms' }}> {/* InsightCard */}
-<div style={{ animationDelay: '400ms' }}> {/* TaskCard(s) */}
-```
-
----
-
-## 7. Component Specifications
-
-### MoodOrb
+## 7. Mood State Management
 
 ```tsx
-// Orb tròn 120px, glow color theo mood
-// Mood → color mapping:
-const moodColors = {
-  energized:    { primary: '#F5A623', glow: 'rgba(245,166,35,0.4)' },
-  stable:       { primary: '#A8C4E0', glow: 'rgba(168,196,224,0.3)' },
-  anxious:      { primary: '#C4A8E0', glow: 'rgba(196,168,224,0.3)' },
-  overwhelmed:  { primary: '#D4848A', glow: 'rgba(212,132,138,0.3)' },
-  numb:         { primary: '#5C6B7A', glow: 'rgba(92,107,122,0.2)' },
-}
-
-// Animation: glowPulse 3s ease-in-out infinite + auraFloat 6s ease-in-out infinite
-// Inner: blurred circle, Outer: sharp ring
+// frontend/lib/mood-context.tsx
+const { mood, setMood } = useMood()  // 'energized' | 'stable' | 'anxious' | 'overwhelmed' | 'numb'
+setMood('anxious')  // body class = mood-anxious, aura đổi trong 0.8s
 ```
 
-### TaskCard
-
-```tsx
-// Glass card với left border accent (amber)
-// Uncompleted: border-l-2 border-amber
-// Completed: border-l-2 border-sage, text line-through opacity-60, checkmark animation
-
-// Structure:
-// [checkbox] Title
-//            Implementation intention (smaller, ice-blue text)
-//            [duration badge] [framework badge]
-```
-
-### InsightCard
-
-```tsx
-// Wider glass card
-// Top: framework name badge (uppercase, letter-spacing wide)
-// Main: explanation text (font-display italic, text-lg)
-// Bottom: "Tại sao điều này xảy ra" — expandable collapsible
-
-// Border: subtle gradient từ amber/ice tùy framework
-```
-
-### StreakDisplay
-
-```tsx
-// Compact component cho dashboard
-// Large number (font-display, 4xl) + "ngày liên tiếp"
-// Shield icons dưới (filled = available shields)
-// If streak = 0: không show shame — show "Hôm nay là ngày đầu"
-```
-
-### ChatBubble (onboarding)
-
-```tsx
-// AURA bubble: trái, background bg-elevated, rounded-tl-sm
-// User bubble: phải, background amber-dim, rounded-tr-sm
-// Typing indicator: 3 dots bounce animation
-// Fade-in từng bubble
-```
+- `MoodProvider` wrap trong `app/layout.tsx`
+- `MoodBody` là client component duy nhất re-render khi mood đổi; add/remove class `mood-*` trên `<body>` qua `useEffect`
+- Default mood: `stable` (trang onboarding set thủ công vì chưa biết mood user)
+- Khi `/api/morning` trả về `mood_state` → trang morning gọi `setMood(result.mood_state)`
 
 ---
 
-## 8. Navigation
+## 8. Light / Dark Mode
 
-**Desktop (≥768px):** Sidebar trái, 240px wide
-```
-Logo AURA (top)
----
-◉ Dashboard
-☀ Morning
-✓ Checklist  
-◐ Evening
----
-● Streak badge (bottom)
-```
-
-**Mobile (<768px):** Bottom navigation bar
-```
-[Dashboard] [Morning] [Checklist] [Evening]
-Icon + label nhỏ
-Active: amber color + dot indicator
-```
+- Default: Dark (`:root` == `[data-theme="dark"]`).
+- Toggle: `frontend/lib/theme-context.tsx` → `[data-theme="light"]` trên `<html>`, persist vào `localStorage`.
+- Tất cả màu trong v2.1 đã check WCAG AA (4.5:1) cho `text-primary` và `text-secondary` trên `bg-primary` ở cả 2 mode.
+- `--btn-text` giữ nguyên `#0a0a0f` cả 2 mode vì mood gradient luôn đủ sáng.
 
 ---
 
-## 9. Loading States
+## 9. File References
 
-**Skeleton loading (data fetch):**
-```css
-/* Shimmer effect trên placeholder */
-background: linear-gradient(90deg,
-  var(--bg-surface) 25%,
-  var(--bg-elevated) 50%,
-  var(--bg-surface) 75%
-);
-background-size: 200% auto;
-animation: shimmer 1.5s linear infinite;
-```
-
-**Pipeline loading (Morning check-in — 3-5 giây):**
-- MoodOrb pulsing glow (color: tím neutral)
-- Text: "AURA đang lắng nghe..." → "Nhận diện pattern..." → "Chuẩn bị kế hoạch..."
-- Cycle 3 messages với fade transition
+| File | Vai trò |
+|------|---------|
+| `frontend/app/globals.css`           | CSS vars, keyframes, `.aura-bg`, `.mood-*`, tất cả component utility |
+| `frontend/tailwind.config.ts`        | Token mirror + Tailwind keyframes/animations |
+| `frontend/lib/mood-context.tsx`      | `MoodProvider`, `MoodBody`, `useMood()` |
+| `frontend/lib/theme-context.tsx`     | Dark/Light toggle |
+| `frontend/app/layout.tsx`            | Load fonts Sora + DM Sans, wrap providers, render `.aura-bg` |
+| `frontend/components/ui/Button.tsx`  | Wrapper cho `.btn-mood` / `.btn-ghost` / `.btn-danger` |
+| `frontend/components/Navigation.tsx` | Sidebar + mobile bar, gradient-text logo |
 
 ---
 
-## 10. Error States
+## 10. Do / Don't
 
-```tsx
-// Friendly error — không show raw error message
-// Icon: ⚠ hoặc 🌙 (soft)
-// Title: "Kết nối bị gián đoạn"
-// Message: "AURA đang gặp sự cố nhỏ. Thử lại sau vài giây nhé."
-// Button: "Thử lại" (retry action)
-```
+**DO**
+- Luôn dùng CSS var thay vì hardcode màu (`var(--mood-color)`, không `#64b5f6`)
+- Thêm `.anim-fade-in-up` hoặc `.stagger` cho entrance
+- Dùng `.glass-card` cho 90% container; `.surface-card` khi cần opacity 100%
+- Respect `prefers-reduced-motion` — không thêm animation ngoài library
+- Test cả light + dark mode trước khi coi là xong
 
----
-
-## 11. Tailwind Config Additions
-
-```ts
-// tailwind.config.ts
-extend: {
-  colors: {
-    'midnight': {
-      900: '#080810',
-      800: '#0C0C18',
-      700: '#12121F',
-      600: '#1A1A2E',
-    },
-    'amber': '#F5A623',
-    'ice': '#A8C4E0',
-    'sage': '#8FB8A0',
-    'rose-muted': '#D4848A',
-  },
-  fontFamily: {
-    display: ['Playfair Display', 'Georgia', 'serif'],
-    body: ['DM Sans', 'system-ui', 'sans-serif'],
-  },
-  animation: {
-    'fade-in':    'fadeIn 0.4s ease forwards',
-    'slide-up':   'slideUp 0.5s ease forwards',
-    'glow-pulse': 'glowPulse 3s ease-in-out infinite',
-    'aura-float': 'auraFloat 6s ease-in-out infinite',
-    'shimmer':    'shimmer 1.5s linear infinite',
-    'check-pop':  'checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-  },
-  keyframes: {
-    fadeIn:    { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-    slideUp:   { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-    glowPulse: { '0%, 100%': { boxShadow: '0 0 20px var(--tw-shadow-color)' }, '50%': { boxShadow: '0 0 60px var(--tw-shadow-color)' } },
-    auraFloat: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
-    shimmer:   { '0%': { backgroundPosition: '-200% center' }, '100%': { backgroundPosition: '200% center' } },
-    checkPop:  { '0%': { transform: 'scale(0)' }, '60%': { transform: 'scale(1.3)' }, '100%': { transform: 'scale(1)' } },
-  },
-}
-```
+**DON'T**
+- Không hardcode `#fff`, `#000` cho text (dùng `var(--text-primary)`)
+- Không dùng Inter/Roboto/Arial/Cormorant/Playfair
+- Không tạo button raw `<button>` — luôn qua `<Button />` hoặc class `.btn-mood`
+- Không thêm `background: rgba(255,255,255,...)` cho card — dùng `var(--bg-overlay)`
+- Không override `--mood-color` ngoài file `mood-*` class

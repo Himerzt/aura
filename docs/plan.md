@@ -12,7 +12,9 @@
 - [x] Phần 2 — Backend Core (memory, prompts, DB) ✓ (2026-04-12)
 - [x] Phần 3 — 4 Agents + Pipeline ✓ (2026-04-12)
 - [x] Phần 4 — API Routes FastAPI ✓ (2026-04-12)
-- [ ] Phần 5 — Design System + Layout Frontend
+- [x] Phần 5 — Design System + Layout Frontend ✓ (2026-04-13)
+- [x] Phần 5.5 — Redesign UI "AURA GLOW" ✓ (2026-04-13)
+- [x] Phần 5.6 — Animations + Contrast + Button Prominence ✓ (2026-04-13)
 - [ ] Phần 6 — Frontend: Onboarding + Morning
 - [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard
 - [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive
@@ -192,6 +194,101 @@ Thêm CORS middleware cho localhost:3000.
 - [ ] TaskCard render với mock data, tick được
 - [ ] StreakDisplay render với số 0
 - [ ] Không có lỗi TypeScript
+
+---
+
+## Phần 5.5 — Redesign UI "AURA GLOW" ✅ DONE
+
+**Mục tiêu:** Thay toàn bộ aesthetic "Calm Luxury Dark" cũ bằng "AURA GLOW" — layout tối giản, background aura reactive theo `mood_state`, font Sora + DM Sans. KHÔNG đụng vào logic, API, backend.
+
+**Việc đã làm:**
+
+`frontend/tailwind.config.ts`:
+- [x] Thay token colors: `bg-primary`, `bg-surface`, `text-primary`, `text-secondary`
+- [x] Thay 5 mood palette mới (energized/stable/anxious/overwhelmed/numb) với primary + soft
+- [x] Đổi font: `Sora` (heading) + `DM Sans` (body), bỏ Cormorant/Playfair
+- [x] Thêm keyframes: `auraDrift`, `auraJitter`, `auraBreathe`, `gradientPan`, `typingDot`
+
+`frontend/app/globals.css`:
+- [x] CSS variables AURA GLOW (dark + light mode)
+- [x] `.aura-bg` fixed, 2 blob radial-gradient blur 90px, drift ngược chiều
+- [x] `.mood-*` class override `--mood-color`, `--mood-color-soft`, `--mood-glow`, `--aura-speed`, `--aura-opacity`
+- [x] `mood-anxious` thêm grain SVG + jitter animation
+- [x] Utility classes: `.glass-card`, `.surface-card`, `.gradient-text`, `.btn-mood`, `.input-underline`, `.bubble-user`, `.bubble-aura`, `.typing-dot`
+
+`frontend/lib/mood-context.tsx` (mới):
+- [x] `MoodProvider` React context giữ `mood: MoodState`
+- [x] `MoodBody` client component apply `mood-<state>` class lên `<body>`
+
+`frontend/app/layout.tsx`:
+- [x] Import `Sora` + `DM_Sans` từ `next/font/google`
+- [x] Wrap `ThemeProvider > MoodProvider > MoodBody`
+- [x] Thêm `<div class="aura-bg">` trước content
+
+`frontend/app/onboarding/page.tsx` (mới):
+- [x] Chat bubble UI: AURA bên trái (glassmorphism), user bên phải (tint mood)
+- [x] 5 câu hỏi theo `OnboardingRequest`: name → goal → context → past_attempts → daily_anchors
+- [x] Typing indicator 3 chấm có glow
+- [x] Progress dots 5 bước, dot active kéo dài + glow mood
+- [x] Input glass-card với textarea underline + btn-mood
+- [x] Submit `POST /api/onboarding` → redirect `/morning`
+
+`CLAUDE.md`:
+- [x] Replace mục 9 "Design Vision" bằng "Design System — AURA GLOW"
+- [x] Ghi rõ palette, font, animation, file chính
+
+**Success Criteria:**
+- [x] `frontend/tailwind.config.ts` build không lỗi với Sora + mood tokens
+- [x] `.aura-bg` render behind mọi trang, chuyển màu khi `mood-*` class đổi
+- [x] `/onboarding` hiển thị chat bubble đúng aesthetic
+- [x] Visual test qua browser (user đã test xong)
+
+---
+
+## Phần 5.6 — Animations + Contrast + Button Prominence ✅ DONE
+
+**Mục tiêu:** User feedback sau Phần 5.5 — thêm nhiều animation hơn cho tổng thể web, làm nút nổi bật hơn, đảm bảo màu chữ / màu nền contrast ≥ 4.5:1 ở cả Dark + Light mode.
+
+**Việc đã làm:**
+
+`frontend/app/globals.css` (rewrite v2.1):
+- [x] Tăng contrast text cả 2 mode: dark `--text-primary: #f2f2f7`, `--text-secondary: #a8a8c0`, `--text-tertiary: #7a7a95`; light `--text-primary: #13131f`, `--text-secondary: #4f4f63`, `--text-tertiary: #74748a`
+- [x] Light mode `--bg-overlay: rgba(255,255,255,0.72)` để glass-card hiện rõ trên nền sáng (thay vì shadow đen gần như invisible)
+- [x] Thêm biến `--btn-text: #0a0a0f` áp dụng cả 2 mode cho button text
+- [x] Thêm keyframes mới: `fadeIn`, `fadeInUp`, `fadeInScale`, `slideInLeft`, `slideInRight`, `floatY`, `breathe`, `pulseGlow`, `sheen`, `sonarPing`, `rotateSlow`, `wobble`, `textShimmer`
+- [x] Thêm utility class `.anim-fade-in`, `.anim-fade-in-up`, `.anim-fade-in-scale`, `.anim-slide-left/right`, `.anim-float`, `.anim-breathe`, `.anim-pulse-glow`, `.anim-rotate-slow`, `.anim-wobble`
+- [x] Thêm `.stagger > *` helper (fade-in-up delay 0.05-0.75s, tối đa 8 con)
+- [x] Thêm `.hover-lift`, `.hover-glow-text`, `.sonar-ping`
+- [x] `.btn-mood` rewrite: padding 14×28, min-height 48, border 1.5px mood, box-shadow 3 lớp glow, hover → `::before` sheen sweep + scale 1.015 + brightness 1.08
+- [x] Thêm `.btn-ghost` + `.btn-danger` đồng bộ prominence
+- [x] `.glass-card` hover → translateY(-2px) + border đổi thành `--mood-color` + glow mood 36px
+- [x] `@media (prefers-reduced-motion: reduce)` → disable tất cả animation
+
+`frontend/components/ui/Button.tsx`:
+- [x] Bỏ tham chiếu `--amber` / `--rose` cũ
+- [x] Primary → class `.btn-mood`, Ghost → `.btn-ghost`, Danger → `.btn-danger`
+- [x] Size sm/md/lg map theo min-height 40/48/56
+
+`frontend/app/page.tsx`:
+- [x] Thêm `.stagger` cho main container → các section fade-in-up tuần tự
+- [x] Thêm mood preview bar (5 pill button) để test aura đổi mood realtime
+
+`CLAUDE.md`:
+- [x] Update mục 9 sang "Design System AURA GLOW v2.1"
+- [x] Bảng color tokens dark + light với contrast note
+- [x] Thêm Animation Library table (17 keyframes + utility class)
+- [x] Cập nhật Button/Glass-card spec
+
+`docs/design-system.md`:
+- [x] Rewrite toàn bộ file từ "Calm Luxury Dark" cũ sang "AURA GLOW v2.1"
+- [x] Color tokens, mood palette, animation library, component specs, do/don't
+
+**Success Criteria:**
+- [x] `globals.css` compile không lỗi
+- [x] Text contrast ≥ 4.5:1 ở cả dark + light (kiểm tra bằng mắt + token)
+- [x] Button primary nổi bật: border + 3-layer shadow + hover sheen
+- [x] 10+ animation mới dùng được qua class `.anim-*`
+- [ ] Visual test qua browser (user sẽ test)
 
 ---
 

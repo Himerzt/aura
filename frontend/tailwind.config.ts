@@ -1,5 +1,13 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * AURA GLOW — Design Tokens
+ *
+ * Concept: minimal, linear-like layout; background aura reacts to mood_state.
+ * Dark mode default, light mode supported via [data-theme="light"].
+ *
+ * Fonts: Sora (headings) + DM Sans (body). Inter/Roboto/Arial are banned.
+ */
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -9,61 +17,56 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'midnight': {
-          900: '#080810',
-          800: '#0C0C18',
-          700: '#12121F',
-          600: '#1A1A2E',
-        },
-        'amber':        '#F5A623',
-        'ice':          '#A8C4E0',
-        'sage':         '#8FB8A0',
-        'rose-muted':   '#D4848A',
-        'violet-muted': '#C4A8E0',
-        'slate-cool':   '#5C6B7A',
-        'ivory': {
-          100: '#FAF7F2',
-          200: '#F5F0E8',
-          300: '#EDE7DC',
-          400: '#E4DBCC',
+        // ── Base surfaces (dark default) ──
+        'bg-primary':   '#0a0a0f',
+        'bg-surface':   '#12121a',
+        'text-primary': '#e8e8ed',
+        'text-secondary': '#8888a0',
+
+        // ── 5 Mood Aura palettes ──
+        mood: {
+          energized:   { DEFAULT: '#ff8c42', soft: '#ffb347' },
+          stable:      { DEFAULT: '#64b5f6', soft: '#e0e7ff' },
+          anxious:     { DEFAULT: '#b388ff', soft: '#80cbc4' },
+          overwhelmed: { DEFAULT: '#ef5350', soft: '#c62828' },
+          numb:        { DEFAULT: '#78909c', soft: '#b0bec5' },
         },
       },
       fontFamily: {
-        // Primary luxury display — headlines, emotional copy
-        display: ['Cormorant Garamond', 'Playfair Display', 'Georgia', 'serif'],
-        // Secondary display — subheadings, insight text
-        serif: ['Playfair Display', 'Georgia', 'serif'],
-        // UI body text
-        body: ['DM Sans', 'system-ui', 'sans-serif'],
+        // Heading — Sora, wide tracking, 600-700
+        display: ['Sora', 'system-ui', 'sans-serif'],
+        heading: ['Sora', 'system-ui', 'sans-serif'],
+        // Body — DM Sans
+        body:    ['DM Sans', 'system-ui', 'sans-serif'],
+        sans:    ['DM Sans', 'system-ui', 'sans-serif'],
       },
       animation: {
         // Reveal
-        'fade-in':     'fadeIn 0.4s ease forwards',
-        'slide-up':    'slideUp 0.5s ease forwards',
-        'slide-in-r':  'slideInRight 0.4s ease forwards',
+        'fade-in':       'fadeIn 0.5s ease forwards',
+        'slide-up':      'slideUp 0.6s ease forwards',
+        'slide-in-r':    'slideInRight 0.4s ease forwards',
 
-        // MoodOrb
-        'glow-pulse':  'glowPulse 3s ease-in-out infinite',
-        'aura-float':  'auraFloat 6s ease-in-out infinite',
+        // Aura background — speed varies per mood
+        'aura-fast':     'auraDrift 14s ease-in-out infinite alternate',
+        'aura-medium':   'auraDrift 22s ease-in-out infinite alternate',
+        'aura-slow':     'auraDrift 36s ease-in-out infinite alternate',
+        'aura-jitter':   'auraJitter 2.8s ease-in-out infinite',
+        'aura-breathe':  'auraBreathe 6s ease-in-out infinite',
 
-        // Background aurora
-        'aurora-shift': 'auroraShift 28s ease-in-out infinite alternate',
+        // Gradient text sweep for AURA logo
+        'gradient-pan':  'gradientPan 10s linear infinite',
 
-        // Loading / shimmer
-        'shimmer':     'shimmer 1.5s linear infinite',
+        // Typing indicator
+        'typing-dot':    'typingDot 1.4s ease-in-out infinite',
 
         // Interactions
-        'check-pop':   'checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-        'scale-in':    'scaleIn 0.2s ease forwards',
+        'check-pop':     'checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        'scale-in':      'scaleIn 0.2s ease forwards',
 
-        // Text glow pulse (for AURA logo)
-        'glow-text':   'glowText 4s ease-in-out infinite',
-
-        // Streak milestone
-        'celebrate':   'celebrate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        // Loading shimmer
+        'shimmer':       'shimmer 1.5s linear infinite',
       },
       keyframes: {
-        // ── Reveal ──
         fadeIn: {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to:   { opacity: '1', transform: 'translateY(0)' },
@@ -77,32 +80,33 @@ const config: Config = {
           to:   { opacity: '1', transform: 'translateX(0)' },
         },
 
-        // ── MoodOrb ──
-        glowPulse: {
-          '0%, 100%': { boxShadow: '0 0 20px var(--tw-shadow-color)' },
-          '50%':      { boxShadow: '0 0 60px var(--tw-shadow-color), 0 0 100px var(--tw-shadow-color)' },
+        // Drifting blobs — same keyframe reused at different speeds
+        auraDrift: {
+          '0%':   { transform: 'translate(0%, 0%) scale(1)' },
+          '50%':  { transform: 'translate(3%, -4%) scale(1.08)' },
+          '100%': { transform: 'translate(-3%, 4%) scale(0.96)' },
         },
-        auraFloat: {
-          '0%, 100%': { transform: 'translateY(0px) scale(1)' },
-          '50%':      { transform: 'translateY(-8px) scale(1.02)' },
+        auraJitter: {
+          '0%, 100%': { transform: 'translate(0px, 0px)' },
+          '25%':      { transform: 'translate(1px, -1px)' },
+          '50%':      { transform: 'translate(-1px, 1px)' },
+          '75%':      { transform: 'translate(1px, 1px)' },
         },
-
-        // ── Aurora background ──
-        auroraShift: {
-          '0%':   { transform: 'translate(0%, 0%) rotate(0deg)' },
-          '25%':  { transform: 'translate(2%, 3%) rotate(2deg)' },
-          '50%':  { transform: 'translate(-2%, 1%) rotate(-1deg)' },
-          '75%':  { transform: 'translate(1%, -2%) rotate(3deg)' },
-          '100%': { transform: 'translate(-1%, 2%) rotate(-2deg)' },
+        auraBreathe: {
+          '0%, 100%': { opacity: '0.85', transform: 'scale(1)' },
+          '50%':      { opacity: '1',    transform: 'scale(1.03)' },
         },
 
-        // ── Loading ──
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% center' },
-          '100%': { backgroundPosition: '200% center' },
+        gradientPan: {
+          '0%':   { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '200% 50%' },
         },
 
-        // ── Interactions ──
+        typingDot: {
+          '0%, 60%, 100%': { transform: 'translateY(0)',    opacity: '0.35' },
+          '30%':           { transform: 'translateY(-4px)', opacity: '1' },
+        },
+
         checkPop: {
           '0%':   { transform: 'scale(0)' },
           '60%':  { transform: 'scale(1.3)' },
@@ -112,30 +116,18 @@ const config: Config = {
           from: { opacity: '0', transform: 'scale(0.9)' },
           to:   { opacity: '1', transform: 'scale(1)' },
         },
-        celebrate: {
-          '0%':   { transform: 'scale(0.8)', opacity: '0' },
-          '60%':  { transform: 'scale(1.15)' },
-          '100%': { transform: 'scale(1)',   opacity: '1' },
-        },
 
-        // ── Text glow ──
-        glowText: {
-          '0%, 100%': {
-            textShadow: '0 0 20px rgba(245,166,35,0.3), 0 0 40px rgba(245,166,35,0.15)',
-          },
-          '50%': {
-            textShadow: '0 0 30px rgba(245,166,35,0.5), 0 0 60px rgba(245,166,35,0.25)',
-          },
+        shimmer: {
+          '0%':   { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
         },
       },
       backdropBlur: {
-        'card': '12px',
+        'card': '14px',
+        'aura': '80px',
       },
       boxShadow: {
-        'glow-amber': '0 0 20px rgba(245, 166, 35, 0.3)',
-        'glow-ice':   '0 0 20px rgba(168, 196, 224, 0.3)',
-        'glow-rose':  '0 0 20px rgba(212, 132, 138, 0.3)',
-        'glow-violet':'0 0 20px rgba(196, 168, 224, 0.3)',
+        'glow-mood':  '0 0 32px var(--mood-glow)',
         'card':       '0 4px 24px rgba(0, 0, 0, 0.4)',
         'card-light': '0 4px 24px rgba(0, 0, 0, 0.08)',
       },
