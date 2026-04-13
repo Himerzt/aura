@@ -11,6 +11,7 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Badge from '@/components/ui/Badge'
+import Link from 'next/link'
 import { useMood, type MoodState } from '@/lib/mood-context'
 
 const MOCK_TASK = {
@@ -51,9 +52,26 @@ export default function Home() {
         >
           AURA
         </h1>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', marginBottom: 24, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', marginBottom: 20, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Design System Preview — v2.1
         </p>
+
+        {/* ── Entry CTAs (Phần 6) ── */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            flexWrap: 'wrap',
+            marginBottom: 28,
+          }}
+        >
+          <Link href="/onboarding" className="btn-mood" style={{ borderRadius: 12, textDecoration: 'none' }}>
+            Bắt đầu Onboarding
+          </Link>
+          <Link href="/morning" className="btn-ghost" style={{ borderRadius: 12, textDecoration: 'none' }}>
+            Check-in sáng
+          </Link>
+        </div>
 
         {/* ── Mood Preview Controls ── */}
         <div

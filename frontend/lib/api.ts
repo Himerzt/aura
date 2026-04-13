@@ -1,0 +1,24 @@
+import type { MorningResult, UserProfile } from './types'
+
+async function json<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  })
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(msg || `${res.status} ${res.statusText}`)
+  }
+  return res.json() as Promise<T>
+}
+
+export function getProfile(): Promise<UserProfile> {
+  return json<UserProfile>('/api/profile')
+}
+
+export function postMorning(user_input: string): Promise<MorningResult> {
+  return json<MorningResult>('/api/morning', {
+    method: 'POST',
+    body: JSON.stringify({ user_input }),
+  })
+}

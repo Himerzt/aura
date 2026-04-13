@@ -62,6 +62,20 @@ export default function OnboardingPage() {
     setMood('stable')
   }, [setMood])
 
+  // If profile already onboarded, skip straight to morning
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => {
+        if (!cancelled && p?.onboarding_completed) router.replace('/morning')
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [router])
+
   // Type out AURA's prompt whenever step changes
   useEffect(() => {
     if (stepIndex >= STEPS.length) return

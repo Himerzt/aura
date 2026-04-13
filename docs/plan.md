@@ -288,7 +288,7 @@ Thêm CORS middleware cho localhost:3000.
 - [x] Text contrast ≥ 4.5:1 ở cả dark + light (kiểm tra bằng mắt + token)
 - [x] Button primary nổi bật: border + 3-layer shadow + hover sheen
 - [x] 10+ animation mới dùng được qua class `.anim-*`
-- [ ] Visual test qua browser (user sẽ test)
+- [x] Visual test qua browser (user đã approve 2026-04-13)
 
 ---
 
