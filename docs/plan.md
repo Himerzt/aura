@@ -15,7 +15,7 @@
 - [x] Phần 5 — Design System + Layout Frontend ✓ (2026-04-13)
 - [x] Phần 5.5 — Redesign UI "AURA GLOW" ✓ (2026-04-13)
 - [x] Phần 5.6 — Animations + Contrast + Button Prominence ✓ (2026-04-13)
-- [ ] Phần 6 — Frontend: Onboarding + Morning
+- [x] Phần 6 — Frontend: Onboarding + Morning
 - [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard
 - [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive
 
@@ -314,11 +314,14 @@ Thêm CORS middleware cho localhost:3000.
 - Nút "Lưu & Bắt Đầu Ngày" → redirect `/checklist`
 
 **Success Criteria:**
-- [ ] Onboarding flow chạy đủ 5 câu, submit → profile.json được tạo
-- [ ] Morning form submit → loading state xuất hiện
-- [ ] Kết quả 3 agent hiển thị đúng, có animation stagger
-- [ ] Mood orb đúng màu theo mood_state trả về
-- [ ] Task implementation intention hiển thị rõ ràng
+- [x] Onboarding flow chạy đủ 5 câu, submit → profile.json được tạo
+- [x] Morning form submit → loading state xuất hiện
+- [x] Kết quả 3 agent hiển thị đúng, có animation stagger
+- [x] Mood orb đúng màu theo mood_state trả về
+- [x] Task implementation intention hiển thị rõ ràng
+- [x] Returning user: ReviewCard với 2 CTAs (Mọi thứ vẫn vậy / Cập nhật hồ sơ), editing mode prefill câu trả lời cũ (added 2026-04-13)
+- [x] Gemini retry robust hơn: 4 attempts + exponential backoff 2s/4s/8s cho 503 UNAVAILABLE (added 2026-04-13)
+- [x] User đã test manual trong browser và approve 2026-04-13
 
 ---
 

@@ -8,9 +8,10 @@ from google import genai
 from google.genai import types
 
 MODEL = "gemini-3.1-flash-lite-preview"
-MAX_RETRIES = 1
-DEFAULT_RETRY_DELAY = 15  # seconds for general errors
-RATE_LIMIT_EXTRA = 5      # extra buffer on top of Gemini's suggested retry delay
+MAX_RETRIES = 3                   # 4 total attempts
+DEFAULT_RETRY_DELAY = 15          # seconds — 429 fallback when no retryDelay hint
+RATE_LIMIT_EXTRA = 5              # extra buffer on top of Gemini's suggested retry delay
+UNAVAILABLE_BASE_DELAY = 2.0      # seconds — 503/UNAVAILABLE exponential backoff base
 
 
 def _get_client() -> genai.Client:
@@ -48,11 +49,13 @@ async def call_gemini(
 ) -> dict:
     """
     Call Gemini async (via asyncio.to_thread), parse JSON, validate fields.
-    Retries once on any failure.
-    On 429, waits the retry delay suggested by the API before retrying.
+    Retries up to MAX_RETRIES times on failure.
+      - 429 RESOURCE_EXHAUSTED: waits the API-suggested retryDelay (+ buffer).
+      - 503 UNAVAILABLE ("high demand"): exponential backoff 2s, 4s, 8s.
+      - Other errors: linear 1s, 2s, 3s.
 
     Raises:
-        ValueError: if JSON parse fails or required fields missing after retry.
+        ValueError: if JSON parse fails or required fields missing after all retries.
     """
     client = _get_client()
     config = types.GenerateContentConfig(
@@ -88,8 +91,11 @@ async def call_gemini(
                 error_str = str(exc)
                 if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                     wait = _get_retry_delay(exc)
+                elif "503" in error_str or "UNAVAILABLE" in error_str:
+                    # Exponential backoff: 2s, 4s, 8s
+                    wait = UNAVAILABLE_BASE_DELAY * (2 ** attempt)
                 else:
-                    wait = 1
+                    wait = 1 + attempt
                 await asyncio.sleep(wait)
             continue
 
