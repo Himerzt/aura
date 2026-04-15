@@ -1,4 +1,4 @@
-import type { MorningResult, UserProfile } from './types'
+import type { DayEntry, EveningResult, MorningResult, UserProfile } from './types'
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -20,5 +20,19 @@ export function postMorning(user_input: string): Promise<MorningResult> {
   return json<MorningResult>('/api/morning', {
     method: 'POST',
     body: JSON.stringify({ user_input }),
+  })
+}
+
+export function getToday(): Promise<DayEntry> {
+  return json<DayEntry>('/api/today')
+}
+
+export function postEvening(
+  user_input: string,
+  completed_task_ids: number[],
+): Promise<EveningResult> {
+  return json<EveningResult>('/api/evening', {
+    method: 'POST',
+    body: JSON.stringify({ user_input, completed_task_ids }),
   })
 }

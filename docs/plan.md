@@ -16,8 +16,9 @@
 - [x] Phần 5.5 — Redesign UI "AURA GLOW" ✓ (2026-04-13)
 - [x] Phần 5.6 — Animations + Contrast + Button Prominence ✓ (2026-04-13)
 - [x] Phần 6 — Frontend: Onboarding + Morning
-- [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard
-- [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive
+- [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions)
+- [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
+- [ ] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal
 
 ---
 
@@ -355,11 +356,75 @@ Thêm CORS middleware cho localhost:3000.
 - Weekly insight card (nếu có)
 
 **Success Criteria:**
-- [ ] Tick task có animation smooth
-- [ ] Progress bar cập nhật real-time
-- [ ] Evening submit → Agent 4 result hiển thị với tomorrow_question
+- [x] Tick task có animation smooth
+- [x] Progress bar cập nhật real-time
+- [x] Evening submit → Agent 4 result hiển thị với tomorrow_question
 - [ ] Dashboard hiển thị streak đúng
 - [ ] 7-day mood chart render đúng với data từ history
+
+### Phần 7 — Mở Rộng (Easy)
+
+> Các ý tưởng UI/state-only, không cần agent mới, không cần schema migration. Fit trực tiếp vào 3 trang đang build.
+
+**Checklist page:**
+- [ ] **Micro-emotion 1-tap sau task** — 3 emoji (nhẹ nhõm / bình thường / kiệt sức) lưu vào `task.post_emotion`. Feed Agent 4 như micro-signal.
+- [ ] **Silent tick mode** — nếu `energy_level ≤ 3` buổi sáng, cho phép check-in 1 emoji duy nhất, bỏ qua form.
+
+**Evening page:**
+- [ ] **Tasks-not-done reframe card** — hiển thị TRƯỚC reflection textarea: "X task chưa xong = data về giới hạn hôm nay, không phải thất bại".
+- [ ] **Guided reflection 3-prompt scaffolding** — thay textarea trống bằng 3 ô ngắn: "1 điều hôm nay dạy bạn / 1 điều làm bạn ngạc nhiên / 1 điều bạn biết ơn".
+- [ ] **Letter to tomorrow-me** — 1-2 câu user viết cho chính mình, sáng mai hiện ra ở đầu trang morning.
+- [ ] **Ambient mode** — toggle lofi/rain background audio khi làm reflection.
+
+**Dashboard page:**
+- [ ] **"Why-today" card** — hiển thị `profile.goal` + 1 câu trích từ reflection tuần trước.
+- [ ] **Anti-streak metric** — thay "streak liên tục" bằng **"days with intention"** (số ngày có check-in trong 30 ngày gần nhất). Giảm shame khi miss.
+- [ ] **Seed-of-day** — đầu mỗi trang hiển thị 1 câu trích từ chính reflection user tuần trước ("Ngày 12/4 bạn viết: ...").
+- [ ] **Share card milestone** — 7/30 ngày có design đẹp theo mood tốt nhất tuần, PNG export để share.
+
+**Success Criteria:**
+- [ ] Không phát sinh endpoint mới (dùng `history.json` sẵn có)
+- [ ] Mọi extension có thể toggle off qua setting (không ép user)
+
+### Phần 7 — Bảng Kế Hoạch Thực Hiện
+
+> Thứ tự build từ trên xuống. Core = bắt buộc (baseline Phần 7 gốc), Easy = extension đã thêm. Làm hết Core 1 trang rồi mới sang Easy trang đó, rồi mới chuyển trang tiếp theo.
+
+| STT | Task | Trang | Cấp độ | Phụ thuộc | Trạng thái |
+|-----|------|-------|--------|-----------|------------|
+| 1 | Fetch today entry từ `GET /api/today` + state management | Checklist | Core | Phần 4 API | ✅ Done |
+| 2 | Render task list với checkbox + strikethrough animation | Checklist | Core | #1 | ✅ Done |
+| 3 | Progress bar real-time (X/Y tasks done) | Checklist | Core | #2 | ✅ Done |
+| 4 | Textarea "Ghi nhận nhanh" (mid-day note) | Checklist | Core | #1 | ✅ Done |
+| 5 | Button "Kết thúc ngày" → redirect `/evening` | Checklist | Core | #2, #4 | ✅ Done |
+| 6 | Seed-of-day banner đầu trang (trích reflection cũ) | Checklist | Easy | #1 |
+| 7 | Micro-emotion 1-tap (3 emoji) sau mỗi task tick | Checklist | Easy | #2 |
+| 8 | Silent tick mode (energy ≤ 3 → chỉ 1 emoji) | Checklist | Easy | #2, #7 |
+| 9 | Fetch today tasks + so sánh done/not-done | Evening | Core | #5 | ✅ Done |
+| 10 | Tasks-not-done reframe card (hiện trước reflection) | Evening | Easy | #9 |
+| 11 | Guided 3-prompt reflection scaffolding (3 ô ngắn) | Evening | Easy | #9 |
+| 12 | Submit → `POST /api/evening` → Agent 4 | Evening | Core | #9, #11 | ✅ Done |
+| 13 | Hiển thị Agent 4 result (summary, pattern, tomorrow_question) | Evening | Core | #12 | ✅ Done |
+| 14 | Letter to tomorrow-me input (1-2 câu) | Evening | Easy | #13 |
+| 15 | Ambient mode toggle (lofi/rain audio) | Evening | Easy | #9 |
+| 16 | Button "Xem Dashboard" → redirect `/dashboard` | Evening | Core | #13 | ✅ Done |
+| 17 | Greeting với `profile.name` + timezone-aware | Dashboard | Core | Phần 4 API |
+| 18 | StreakDisplay component với shield count | Dashboard | Core | #17 |
+| 19 | Quick stats card (ngày, tasks hôm nay, mood trend) | Dashboard | Core | #17 |
+| 20 | Mini 7-day mood chart (SVG/div bars) | Dashboard | Core | #17 |
+| 21 | CTA buttons: Check-in Sáng / Checklist / Evening | Dashboard | Core | #17 |
+| 22 | Weekly insight card (nếu đủ 7 ngày) | Dashboard | Core | #17 |
+| 23 | "Why-today" card (goal + quote từ reflection gần nhất) | Dashboard | Easy | #17, #6 |
+| 24 | Anti-streak metric ("days with intention" 30 ngày) | Dashboard | Easy | #18 |
+| 25 | Share card milestone (7/30 ngày, PNG export) | Dashboard | Easy | #18 |
+
+**Chiến lược ship:**
+1. **Milestone A (Checklist Core)** — STT 1-5: user có thể tick task cơ bản. Ship được. ✅ **Done** (2026-04-14)
+2. **Milestone B (Evening Core)** — STT 9, 12, 13, 16: vòng lặp morning→evening khép kín. ✅ **Done** (2026-04-15)
+3. **Milestone C (Dashboard Core)** — STT 17-22: user thấy được big picture.
+4. **Milestone D (Easy polish)** — STT 6-8, 10-11, 14-15, 23-25: layer lên sau khi 3 trang ổn định.
+
+**Rule:** Không bắt đầu Milestone tiếp theo nếu Milestone trước chưa test qua browser + approve.
 
 ---
 
@@ -398,6 +463,138 @@ Thêm CORS middleware cho localhost:3000.
 - [ ] Streak shield logic đúng
 - [ ] Error state hiển thị khi backend down
 - [ ] Không có console error trên Chrome DevTools
+
+### Phần 8 — Mở Rộng (Medium)
+
+> Logic mới, cần backend/data processing hoặc re-call agent, nhưng không cần agent mới. Fit vào scope Polish.
+
+**Backend — bổ sung vào `core/memory.py`:**
+- [ ] `log_friction(task_id, reason)` — preset chips khi user skip: `mệt / bị phân tâm / quên / không thấy ý nghĩa`. Lưu vào `history[date].morning.tasks[i].friction`.
+- [ ] `track_time_to_first_action(task_id)` — từ lúc task tạo → tick đầu tiên. Lưu `first_action_delay_minutes`.
+- [ ] `get_framework_diversity_7d()` — trả về dict count framework 7 ngày.
+- [ ] `get_energy_mood_matrix_7d()` — trả về array `[{date, mood, energy}]` cho chart.
+
+**Backend — bổ sung endpoint:**
+- [ ] `POST /api/task/retry-easier` — nhận `task_id`, gọi lại Agent 3 với `energy_level - 2`, thay thế task cũ trong `history.json`.
+- [ ] `POST /api/task/friction` — lưu friction log.
+- [ ] `GET /api/pattern-radar` — trả về count 8 framework trong 7/30 ngày.
+
+**Checklist page (Medium):**
+- [ ] **"Task quá sức" escape hatch** — nút nhỏ cạnh task → call `/api/task/retry-easier`, animation swap task mới mượt.
+- [ ] **Friction log modal khi skip** — preset chips, optional free text.
+- [ ] **Time-to-first-action indicator** — nếu delay > 3h nhiều ngày liên tục, dashboard hiện insight "có vẻ bạn đang phân tích quá nhiều".
+- [ ] **Implementation intention countdown** — nếu task có mốc giờ trigger, hiện countdown live.
+- [ ] **Midday mood re-check slider** — 1 slider ở đầu checklist, so với morning mood.
+
+**Evening page (Medium):**
+- [ ] **Tomorrow pre-commit** — sau Agent 4 result, ô input "Ngày mai lúc ___ tôi sẽ ___". Lock IF-THEN, sáng mai hiện lại trong morning form như mặc định.
+
+**Dashboard page (Medium):**
+- [ ] **Pattern radar chart** — spider chart 8 framework, count 30 ngày gần nhất.
+- [ ] **Framework diversity indicator** — nếu 1 framework lặp > 5 ngày liên tục, hiển thị cảnh báo nhẹ "có pattern lặp".
+- [ ] **Energy × mood correlation chart** — scatter 7 ngày, trục X = mood, Y = energy.
+
+**UX platform (Medium):**
+- [ ] **Reminder neo vào daily_anchor** — thay vì push giờ tùy ý, neo vào thói quen onboarding ("sau khi pha cà phê sáng"). Dùng local notification nếu PWA.
+- [ ] **PWA installable offline-first** — manifest.json + service worker, checklist chạy offline, sync khi online.
+- [ ] **Gentle re-entry flow** — nếu miss ≥ 3 ngày, skip morning form, chỉ hỏi 1 câu: "không sao, hôm nay bạn muốn bắt đầu bằng điều gì nhỏ nhất?".
+
+**Success Criteria:**
+- [ ] 3 endpoint mới có trong `/docs`
+- [ ] Pattern radar render đúng với mock history 30 ngày
+- [ ] PWA pass Lighthouse audit (installable)
+- [ ] Retry-easier flow không mất data task cũ (lưu `replaced_from` reference)
+
+---
+
+## Phần 9 — Sáng Kiến Nâng Cao (Hard)
+
+**Mục tiêu:** Biến AURA từ "task manager có AI" thành "companion nhớ bạn". Phần này cần agent mới hoặc meta-logic trên lịch sử dài. Chỉ làm sau khi Phần 1-8 ổn định và có ít nhất 14 ngày data thật.
+
+**Việc cần làm:**
+
+### 9.1 — Aura Memory Recall
+
+**Ý tưởng:** Khi mood_state hôm nay trùng với 1 ngày trong quá khứ đã vượt qua thành công, dashboard hiện chính lời của user từ ngày đó làm liều thuốc — không phải advice generic.
+
+`backend/core/memory_recall.py` (mới):
+- [ ] `find_similar_past_day(current_mood, current_energy)` — tìm entry có `mood_state` tương đồng + tasks completed > 50% + evening reflection không phải crisis.
+- [ ] Similarity score dựa trên: mood match (0.5) + energy ±2 (0.3) + day_count distance (0.2).
+- [ ] Trả về `{date, user_quote, tasks_done, days_ago}`.
+
+`backend/main.py`:
+- [ ] `GET /api/memory-recall` — trả về similar past day nếu có, null nếu không đủ data (< 14 ngày).
+
+`frontend/components/aura/MemoryRecallCard.tsx` (mới):
+- [ ] Card dashboard: "30 ngày trước bạn cũng overwhelmed như hôm nay. Ngày đó bạn đã viết: '...' và bạn đã hoàn thành 2/3 task."
+- [ ] Tone: không patronizing, không "bạn làm được mà" generic.
+
+### 9.2 — Pattern Alert Auto-Mode
+
+**Ý tưởng:** Nếu detect shame spiral / learned helplessness ≥ 3 ngày liên tục, pipeline tự chuyển sang Self-Compassion priority mode, user không cần biết — Agent 2 bỏ qua lựa chọn bình thường.
+
+`backend/core/pattern_alert.py` (mới):
+- [ ] `detect_risk_pattern(history_7d)` — rule-based detector:
+  - Shame spiral: ≥ 3 ngày liên tục có reflection chứa keywords tự chỉ trích + tasks < 30% complete
+  - Learned helplessness: ≥ 5 ngày liên tục energy ≤ 3 + không có task nào complete
+  - Avoidance loop: skip morning check-in ≥ 2 ngày liên tục
+- [ ] Trả về `{pattern_name, severity, recommended_override}`.
+
+`backend/core/pipeline.py`:
+- [ ] `run_morning_pipeline()` check pattern_alert TRƯỚC khi gọi Agent 2.
+- [ ] Nếu có alert → inject `force_framework` vào Agent 2 context, override selection logic.
+- [ ] Log alert vào `history[date].meta.pattern_alert`.
+
+`frontend/components/aura/`:
+- [ ] Không cần UI đặc biệt — user nhận framework đã override một cách tự nhiên.
+- [ ] Optional: dashboard có indicator nhỏ "AURA đang ưu tiên self-compassion cho bạn tuần này" nếu alert active.
+
+### 9.3 — Weekly Letter (Agent 5)
+
+**Ý tưởng:** Chủ nhật, agent mới tổng hợp cả tuần thành 1 lá thư tiếng Việt cho user, tone như người bạn thân đã dõi theo 7 ngày. Không phải "insights", không phải bullet points — là thư.
+
+`backend/agents/weekly_letter.py` (mới):
+- [ ] Input: `history_7_days`, `profile`, `patterns_detected`, `memory_recalls`.
+- [ ] System prompt: viết thư tiếng Việt, xưng "mình" - "bạn", 200-400 từ, đề cập cụ thể 2-3 khoảnh khắc trong tuần.
+- [ ] Output JSON: `{letter_title, letter_body, signature_mood}`.
+
+`backend/core/prompts.py`:
+- [ ] `get_weekly_letter_prompt()` — system prompt với examples tone (tránh "as an AI", tránh listicle).
+
+`backend/main.py`:
+- [ ] `GET /api/weekly-letter` — chỉ return nếu hôm nay là Chủ nhật (hoặc đã qua CN gần nhất và chưa đọc) + đủ 7 ngày data.
+- [ ] Letter lưu vào `history[sunday_date].weekly_letter` để đọc lại sau.
+
+`frontend/app/dashboard/page.tsx`:
+- [ ] Weekly Letter card — prominent position nếu có thư chưa đọc, collapsible archive cho thư cũ.
+- [ ] Reading view: font Sora serif-like, max-width 560px, typography như đọc thư thật.
+
+### 9.4 — Bad-Day Rehearsal
+
+**Ý tưởng:** Ngày user ở state `energized`/`stable`, AURA gợi ý viết trước "1 câu dặn mình cho ngày khó". Khi mood_state = overwhelmed/numb sau này → hiện đúng câu đó ở đầu trang morning, trước khi hỏi bất cứ câu gì.
+
+`backend/core/memory.py`:
+- [ ] `save_bad_day_message(message, author_date)` — lưu vào `profile.bad_day_messages[]`.
+- [ ] `get_bad_day_message()` — random 1 message chưa dùng gần đây, hoặc oldest nếu hết.
+- [ ] `mark_bad_day_message_used(id)` — track usage tránh lặp.
+
+`backend/main.py`:
+- [ ] `POST /api/bad-day-message` — lưu message mới.
+- [ ] `GET /api/bad-day-message/today` — chỉ return nếu hôm nay mood = overwhelmed/numb.
+
+`frontend/app/morning/page.tsx`:
+- [ ] Nếu mood detect (từ input đầu tiên) = overwhelmed/numb → pause pipeline, hiển thị Bad-Day Message card từ chính user quá khứ.
+- [ ] User đọc xong → nút "Tiếp tục" → pipeline bình thường.
+
+`frontend/app/dashboard/page.tsx`:
+- [ ] Nếu hôm nay mood tốt (stable/energized) + chưa có message gần đây → gợi ý nhẹ "Viết 1 câu cho ngày khó sau này?".
+
+**Success Criteria Phần 9:**
+- [ ] Memory Recall chỉ fire khi có ≥ 14 ngày data và similarity score > 0.7
+- [ ] Pattern Alert không false positive trên data lành mạnh (test với mock 14 ngày tốt)
+- [ ] Weekly Letter có tone thực sự "người", không giống AI output (review bằng mắt)
+- [ ] Bad-Day Rehearsal không spam — cooldown 7 ngày giữa các lần dùng lại 1 message
+- [ ] Tất cả 4 feature có thể tắt qua setting — không ép user dùng meta-layer
 
 ---
 

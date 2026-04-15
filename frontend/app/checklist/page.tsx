@@ -1,0 +1,541 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getToday } from '@/lib/api'
+import { useMood } from '@/lib/mood-context'
+import type { DayEntry, MoodState, Task } from '@/lib/types'
+
+const MOOD_LABELS: Record<MoodState, string> = {
+  energized: 'Tràn năng lượng',
+  stable: 'Ổn định',
+  anxious: 'Lo âu',
+  overwhelmed: 'Quá tải',
+  numb: 'Tê liệt',
+}
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function storageKey(date: string): string {
+  return `aura_checklist_${date}`
+}
+
+type LocalChecklistState = {
+  done: number[]
+  note: string
+}
+
+function readLocal(date: string): LocalChecklistState {
+  if (typeof window === 'undefined') return { done: [], note: '' }
+  try {
+    const raw = window.localStorage.getItem(storageKey(date))
+    if (!raw) return { done: [], note: '' }
+    const parsed = JSON.parse(raw) as Partial<LocalChecklistState>
+    return {
+      done: Array.isArray(parsed.done) ? parsed.done.filter((n) => typeof n === 'number') : [],
+      note: typeof parsed.note === 'string' ? parsed.note : '',
+    }
+  } catch {
+    return { done: [], note: '' }
+  }
+}
+
+function writeLocal(date: string, state: LocalChecklistState): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(storageKey(date), JSON.stringify(state))
+  } catch {
+    // localStorage quota or privacy mode — fail silently
+  }
+}
+
+export default function ChecklistPage() {
+  const router = useRouter()
+  const { setMood } = useMood()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [entry, setEntry] = useState<DayEntry | null>(null)
+  const [doneIds, setDoneIds] = useState<number[]>([])
+  const [note, setNote] = useState<string>('')
+  const [noteSavedAt, setNoteSavedAt] = useState<number | null>(null)
+
+  const date = useMemo(() => todayKey(), [])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    getToday()
+      .then((data) => {
+        if (cancelled) return
+        setEntry(data)
+        if (data?.morning?.mood_state) {
+          setMood(data.morning.mood_state as MoodState)
+        }
+        const local = readLocal(date)
+        const taskCount = data?.morning?.tasks?.length ?? 0
+        const validDone = local.done.filter((i) => i >= 0 && i < taskCount)
+        setDoneIds(validDone)
+        setNote(local.note)
+        if (validDone.length !== local.done.length) {
+          writeLocal(date, { done: validDone, note: local.note })
+        }
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : 'Không tải được dữ liệu hôm nay')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [date, setMood])
+
+  const tasks: Task[] = entry?.morning?.tasks ?? []
+  const totalCount = tasks.length
+  const doneCount = doneIds.length
+  const progressPct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100)
+
+  const toggleTask = useCallback(
+    (index: number) => {
+      setDoneIds((prev) => {
+        const next = prev.includes(index)
+          ? prev.filter((i) => i !== index)
+          : [...prev, index]
+        writeLocal(date, { done: next, note })
+        return next
+      })
+    },
+    [date, note],
+  )
+
+  const onNoteChange = useCallback(
+    (value: string) => {
+      setNote(value)
+      writeLocal(date, { done: doneIds, note: value })
+      setNoteSavedAt(Date.now())
+    },
+    [date, doneIds],
+  )
+
+  const onEndDay = useCallback(() => {
+    writeLocal(date, { done: doneIds, note })
+    router.push('/evening')
+  }, [date, doneIds, note, router])
+
+  if (loading) {
+    return (
+      <PageShell>
+        <div className="glass-card anim-fade-in" style={{ padding: 32, textAlign: 'center' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đang tải checklist...</p>
+        </div>
+      </PageShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <PageShell>
+        <div className="glass-card anim-fade-in-up" style={{ padding: 28 }}>
+          <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6 }}>{error}</p>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => router.refresh()}
+            style={{ marginTop: 18, borderRadius: 12, cursor: 'pointer' }}
+          >
+            Thử lại
+          </button>
+        </div>
+      </PageShell>
+    )
+  }
+
+  if (!entry?.morning) {
+    return (
+      <PageShell>
+        <div className="glass-card anim-fade-in-up" style={{ padding: 28 }}>
+          <h2
+            style={{
+              margin: '0 0 12px',
+              fontFamily: 'var(--font-heading, Sora, system-ui)',
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+            }}
+          >
+            Bạn chưa check-in buổi sáng
+          </h2>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            Checklist được tạo ra từ phiên check-in sáng. Hãy bắt đầu ngày bằng vài dòng cảm xúc.
+          </p>
+          <button
+            type="button"
+            className="btn-mood"
+            onClick={() => router.push('/morning')}
+            style={{ marginTop: 20, borderRadius: 12, cursor: 'pointer' }}
+          >
+            Đi tới check-in sáng
+          </button>
+        </div>
+      </PageShell>
+    )
+  }
+
+  const mood = entry.morning.mood_state as MoodState
+  const moodLabel = MOOD_LABELS[mood] ?? mood
+
+  return (
+    <PageShell>
+      <header className="anim-fade-in-up" style={{ textAlign: 'center', marginBottom: 28 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: '0.72rem',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Checklist hôm nay
+        </p>
+        <h1
+          className="gradient-text"
+          style={{
+            margin: '6px 0 4px',
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+          }}
+        >
+          {moodLabel}
+        </h1>
+        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Tick khi bạn hoàn thành. Không ai chấm điểm bạn.
+        </p>
+      </header>
+
+      <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <ProgressCard done={doneCount} total={totalCount} pct={progressPct} />
+
+        {totalCount === 0 ? (
+          <div className="glass-card" style={{ padding: 24 }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              Sáng nay AURA không đặt task cụ thể. Bạn có thể vẫn ghi nhận lại ngày của mình ở dưới.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tasks.map((task, index) => (
+              <TaskRow
+                key={index}
+                task={task}
+                index={index}
+                done={doneIds.includes(index)}
+                onToggle={() => toggleTask(index)}
+              />
+            ))}
+          </div>
+        )}
+
+        <MidDayNote value={note} onChange={onNoteChange} savedAt={noteSavedAt} />
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            marginTop: 4,
+          }}
+        >
+          <button
+            type="button"
+            className="btn-mood"
+            onClick={onEndDay}
+            style={{ borderRadius: 12, cursor: 'pointer' }}
+          >
+            Kết thúc ngày
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => router.push('/morning')}
+            style={{ borderRadius: 12, cursor: 'pointer' }}
+          >
+            Quay lại check-in sáng
+          </button>
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        padding: '48px 24px 64px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 640 }}>{children}</div>
+    </div>
+  )
+}
+
+function ProgressCard({ done, total, pct }: { done: number; total: number; pct: number }) {
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Tiến độ
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}
+        >
+          {done}/{total}
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        style={{
+          height: 10,
+          borderRadius: 999,
+          background: 'var(--border-default)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            height: '100%',
+            background: 'linear-gradient(135deg, var(--mood-color), var(--mood-color-soft))',
+            boxShadow: '0 0 16px var(--mood-glow)',
+            transition: 'width 0.5s ease',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function TaskRow({
+  task,
+  index,
+  done,
+  onToggle,
+}: {
+  task: Task
+  index: number
+  done: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={done}
+      className="glass-card hover-lift"
+      style={{
+        padding: '18px 20px',
+        borderLeft: '2px solid var(--mood-color)',
+        display: 'flex',
+        gap: 14,
+        alignItems: 'flex-start',
+        textAlign: 'left',
+        cursor: 'pointer',
+        width: '100%',
+        background: 'var(--bg-surface)',
+        opacity: done ? 0.72 : 1,
+        transition: 'opacity 0.3s ease, transform 0.2s ease',
+      }}
+    >
+      <Checkbox done={done} index={index + 1} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: '1rem',
+            fontWeight: 500,
+            color: 'var(--text-primary)',
+            lineHeight: 1.45,
+            textDecorationLine: done ? 'line-through' : 'none',
+            textDecorationStyle: 'solid',
+            textDecorationColor: 'var(--mood-color)',
+            textDecorationThickness: '2px',
+            transition: 'text-decoration-color 0.3s ease',
+          }}
+        >
+          {task.title}
+        </p>
+        {task.implementation && (
+          <p
+            style={{
+              margin: '6px 0 0',
+              fontSize: '0.85rem',
+              color: 'var(--text-secondary)',
+              fontStyle: 'italic',
+              lineHeight: 1.55,
+              textDecorationLine: done ? 'line-through' : 'none',
+              textDecorationStyle: 'solid',
+              textDecorationColor: 'var(--border-default)',
+            }}
+          >
+            {task.implementation}
+          </p>
+        )}
+        <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Chip>{task.estimated_minutes} phút</Chip>
+          {task.difficulty && <Chip>{task.difficulty}</Chip>}
+        </div>
+      </div>
+    </button>
+  )
+}
+
+function Checkbox({ done, index }: { done: boolean; index: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: 32,
+        height: 32,
+        minWidth: 32,
+        borderRadius: 10,
+        border: '1.5px solid var(--mood-color)',
+        background: done
+          ? 'linear-gradient(135deg, var(--mood-color), var(--mood-color-soft))'
+          : 'transparent',
+        boxShadow: done ? '0 0 18px var(--mood-glow)' : 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'background 0.3s ease, box-shadow 0.3s ease',
+        fontSize: '0.85rem',
+        fontWeight: 600,
+        color: done ? 'var(--btn-text)' : 'var(--text-secondary)',
+        fontFamily: 'var(--font-heading, Sora, system-ui)',
+      }}
+    >
+      {done ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M5 12.5l4.5 4.5L19 7.5"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        index
+      )}
+    </span>
+  )
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        fontSize: '0.7rem',
+        color: 'var(--text-tertiary)',
+        padding: '2px 10px',
+        borderRadius: 999,
+        border: '1px solid var(--border-default)',
+        letterSpacing: '0.04em',
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+function MidDayNote({
+  value,
+  onChange,
+  savedAt,
+}: {
+  value: string
+  onChange: (v: string) => void
+  savedAt: number | null
+}) {
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <label
+        style={{
+          display: 'block',
+          fontSize: '0.7rem',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--text-tertiary)',
+          marginBottom: 10,
+        }}
+      >
+        Ghi nhận nhanh
+      </label>
+      <textarea
+        className="input-underline"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Một câu ngắn về điều đang xảy ra ngay bây giờ..."
+        rows={3}
+        style={{
+          width: '100%',
+          resize: 'vertical',
+          minHeight: 72,
+          fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+          fontSize: '0.95rem',
+          lineHeight: 1.6,
+          borderBottom: '1px solid var(--border-default)',
+          background: 'transparent',
+        }}
+      />
+      <div
+        style={{
+          marginTop: 8,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+          {value.trim().length} ký tự
+        </span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+          {savedAt ? 'Đã lưu cục bộ' : 'Tự lưu khi bạn gõ'}
+        </span>
+      </div>
+    </div>
+  )
+}
