@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getProfile, getStreak, getHistory, getToday, getWeeklyInsight } from '@/lib/api'
 import type { WeeklyInsightResponse } from '@/lib/api'
@@ -170,6 +170,15 @@ export default function DashboardPage() {
 
         {/* ── Why-today Card (STT 23) ── */}
         <WhyTodayCard goal={profile?.goal} history={history} />
+
+        {/* ── Anti-streak: Days with intention (STT 24) ── */}
+        <DaysWithIntention history={history} />
+
+        {/* ── Share card milestone (STT 25) ── */}
+        <MilestoneShareCard
+          streak={streak?.current_streak ?? 0}
+          name={profile?.name || 'AURA User'}
+        />
 
         {/* ── CTA Buttons (STT 21) ── */}
         <CTAButtons
@@ -403,6 +412,232 @@ function MoodBar({ day }: { day: ChartDay }) {
       >
         {day.label}
       </span>
+    </div>
+  )
+}
+
+// ── Anti-streak: Days with intention (STT 24) ────────────────
+
+function DaysWithIntention({ history }: { history: HistoryDay[] }) {
+  // Count days in last 30 days where user did a morning check-in
+  const today = new Date()
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const cutoff = thirtyDaysAgo.toISOString().slice(0, 10)
+
+  const daysWithMorning = history.filter(
+    (d) => d.date >= cutoff && d.morning,
+  ).length
+
+  const pct = Math.round((daysWithMorning / 30) * 100)
+
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <SectionLabel>Ngày có ý định (30 ngày)</SectionLabel>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 8,
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: 'var(--mood-color)',
+          }}
+        >
+          {daysWithMorning}
+        </span>
+        <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+          / 30 ngày
+        </span>
+      </div>
+      <div
+        style={{
+          height: 6,
+          borderRadius: 999,
+          background: 'var(--border-default)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            height: '100%',
+            background: 'linear-gradient(135deg, var(--mood-color), var(--mood-color-soft))',
+            transition: 'width 0.5s ease',
+          }}
+        />
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          fontSize: '0.76rem',
+          color: 'var(--text-tertiary)',
+          lineHeight: 1.5,
+        }}
+      >
+        Không đếm streak. Đếm số ngày bạn chọn xuất hiện — dù chỉ 1 phút.
+      </p>
+    </div>
+  )
+}
+
+// ── Share card milestone (STT 25) ────────────────────────────
+
+const MILESTONES = [7, 30, 60, 100] as const
+
+function getMilestone(streak: number): number | null {
+  // Return the highest milestone achieved
+  for (let i = MILESTONES.length - 1; i >= 0; i--) {
+    if (streak >= MILESTONES[i]) return MILESTONES[i]
+  }
+  return null
+}
+
+const MILESTONE_MESSAGES: Record<number, string> = {
+  7: '1 tuần kiên trì — bạn đang xây thói quen thật sự.',
+  30: '30 ngày! Đây không phải may mắn, đây là lựa chọn.',
+  60: '60 ngày — bạn đã chứng minh với chính mình.',
+  100: '100 ngày. Respect. 💛',
+}
+
+function MilestoneShareCard({
+  streak,
+  name,
+}: {
+  streak: number
+  name: string
+}) {
+  const milestone = getMilestone(streak)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const exportPng = useCallback(() => {
+    if (!milestone) return
+    const canvas = document.createElement('canvas')
+    const w = 600
+    const h = 340
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, w, h)
+    grad.addColorStop(0, '#0a0a0f')
+    grad.addColorStop(1, '#14141f')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, w, h)
+
+    // Accent line
+    ctx.fillStyle = '#64b5f6'
+    ctx.fillRect(0, 0, 4, h)
+
+    // "AURA" label
+    ctx.fillStyle = '#7a7a95'
+    ctx.font = '600 11px sans-serif'
+    ctx.letterSpacing = '3px'
+    ctx.fillText('AURA', 32, 42)
+
+    // Milestone number
+    ctx.fillStyle = '#64b5f6'
+    ctx.font = '700 72px sans-serif'
+    ctx.fillText(`${milestone}`, 32, 140)
+
+    // "ngày" text
+    ctx.fillStyle = '#a8a8c0'
+    ctx.font = '400 20px sans-serif'
+    ctx.fillText('ngày liên tiếp', 32, 172)
+
+    // Message
+    ctx.fillStyle = '#f2f2f7'
+    ctx.font = '400 16px sans-serif'
+    const msg = MILESTONE_MESSAGES[milestone] ?? `${milestone} ngày!`
+    ctx.fillText(msg, 32, 220)
+
+    // Name
+    ctx.fillStyle = '#7a7a95'
+    ctx.font = '400 13px sans-serif'
+    ctx.fillText(`— ${name}`, 32, 280)
+
+    // Date
+    ctx.fillText(new Date().toLocaleDateString('vi-VN'), 32, 306)
+
+    // Download
+    const link = document.createElement('a')
+    link.download = `aura-milestone-${milestone}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }, [milestone, name])
+
+  if (!milestone) return null
+
+  return (
+    <div
+      className="glass-card anim-fade-in-scale"
+      style={{
+        padding: 24,
+        borderLeft: '2px solid var(--mood-color)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <SectionLabel>Milestone</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '2rem',
+            fontWeight: 700,
+            color: 'var(--mood-color)',
+          }}
+        >
+          {milestone}
+        </span>
+        <span style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+          ngày
+        </span>
+      </div>
+      <p
+        style={{
+          margin: '0 0 16px',
+          fontSize: '0.92rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.55,
+        }}
+      >
+        {MILESTONE_MESSAGES[milestone]}
+      </p>
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={exportPng}
+        style={{
+          borderRadius: 10,
+          cursor: 'pointer',
+          padding: '8px 18px',
+          fontSize: '0.8rem',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path
+            d="M7 1v8m0 0L4 6.5M7 9l3-2.5M2 11h10"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Tải ảnh chia sẻ
+      </button>
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   )
 }

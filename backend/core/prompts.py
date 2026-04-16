@@ -128,7 +128,14 @@ Respond in JSON only."""
 
 # ── Agent 3: Task Generator ───────────────────────────────────────────────────
 
-def get_task_prompt(framework: str, energy: int, anchors: list[str]) -> str:
+def get_task_prompt(
+    framework: str,
+    energy: int,
+    anchors: list[str],
+    goal: str = "",
+    context: str = "",
+    support_style: str = "balanced",
+) -> str:
     if energy <= 3:
         max_tasks, max_time, difficulty = 1, 15, "very_easy"
     elif energy <= 6:
@@ -145,24 +152,49 @@ def get_task_prompt(framework: str, energy: int, anchors: list[str]) -> str:
     fw_name = fw_info.get("name", framework)
     fw_desc = fw_info.get("description", "")
 
+    goal_text = f"User's primary goal: {goal}" if goal else "No specific goal provided."
+    context_text = f"User's life context: {context}" if context else ""
+
+    style_map = {
+        "push": "Be direct, challenge the user to push their limits.",
+        "gentle": "Be soft and encouraging, small steps are enough.",
+        "balanced": "Mix challenge with warmth.",
+    }
+    style_text = style_map.get(support_style, style_map["balanced"])
+
     return f"""You are AURA's Task Generator agent. Generate actionable tasks using the {fw_name} framework.
 
 Framework guidance: {fw_desc}
+
+## USER GOAL (CRITICAL — tasks MUST advance this goal)
+{goal_text}
+{context_text}
+
+EVERY task you generate MUST directly help the user make real progress toward their stated goal. Examples:
+- Goal "giảm cân" → tasks about exercise, diet, meal prep, walking — NOT journaling about feelings
+- Goal "học tiếng Anh" → tasks about studying, practicing, listening — NOT generic self-care
+- Goal "tìm việc làm" → tasks about resume, applications, networking — NOT meditation
+
+If the psychology framework suggests a mental/emotional task, COMBINE it with the user's goal. For example: if framework is "two_minute_rule" and goal is "giảm cân", the task should be "Đi bộ 2 phút quanh nhà" NOT "Viết nhật ký 2 phút".
+
 {anchor_text}
+
+Support style: {style_text}
 
 STRICT RULES (must follow exactly):
 - Maximum tasks: {max_tasks}
 - Maximum total time: {max_time} minutes
 - Difficulty level: {difficulty} only
 - Each task must have a specific implementation intention: "When [trigger], I will [action] for [duration] at [location]"
-- Tasks must be concrete and completable today
+- Tasks must be concrete, goal-relevant, and completable today
+- Do NOT generate generic self-help tasks (journaling, gratitude lists) unless the user's goal IS about mental health
 - Do NOT repeat tasks the user has failed at multiple times (check past_attempts)
 
 Output format (strict JSON, no markdown):
 {{
   "tasks": [
     {{
-      "title": "<short task title in Vietnamese>",
+      "title": "<short task title in Vietnamese — action toward the goal>",
       "implementation": "<full implementation intention in Vietnamese>",
       "estimated_minutes": <integer>,
       "difficulty": "<very_easy|easy|medium|hard>"

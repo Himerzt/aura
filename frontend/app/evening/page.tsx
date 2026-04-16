@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToday, postEvening } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
@@ -150,7 +150,7 @@ export default function EveningPage() {
   if (result) {
     return (
       <PageShell>
-        <ResultView result={result} onDashboard={() => router.push('/dashboard')} />
+        <ResultView result={result} onDashboard={() => router.push('/dashboard')} date={date} />
       </PageShell>
     )
   }
@@ -184,6 +184,7 @@ export default function EveningPage() {
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Không phải để chấm điểm. Chỉ để hiểu bản thân rõ hơn.
         </p>
+        <AmbientToggle />
       </header>
 
       <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -592,9 +593,11 @@ function GuidedField({
 function ResultView({
   result,
   onDashboard,
+  date,
 }: {
   result: EveningResult
   onDashboard: () => void
+  date: string
 }) {
   return (
     <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -697,6 +700,8 @@ function ResultView({
         </p>
       </div>
 
+      <LetterToTomorrow date={date} />
+
       <div
         style={{
           display: 'flex',
@@ -712,6 +717,262 @@ function ResultView({
         >
           Xem Dashboard
         </button>
+      </div>
+    </div>
+  )
+}
+
+type AmbientMode = 'off' | 'rain' | 'lofi'
+
+const AMBIENT_OPTIONS: { value: AmbientMode; icon: string; label: string }[] = [
+  { value: 'rain', icon: '🌧', label: 'Mưa' },
+  { value: 'lofi', icon: '🎵', label: 'Lo-fi' },
+]
+
+function createNoiseNode(ctx: AudioContext, type: AmbientMode): AudioNode {
+  const bufferSize = 2 * ctx.sampleRate
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+  const output = buffer.getChannelData(0)
+
+  if (type === 'rain') {
+    // Brown noise (rain-like): accumulate white noise
+    let last = 0
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1
+      last = (last + 0.02 * white) / 1.02
+      output[i] = last * 3.5
+    }
+  } else {
+    // Lo-fi: pink noise (softer)
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1
+      b0 = 0.99886 * b0 + white * 0.0555179
+      b1 = 0.99332 * b1 + white * 0.0750759
+      b2 = 0.96900 * b2 + white * 0.1538520
+      b3 = 0.86650 * b3 + white * 0.3104856
+      b4 = 0.55000 * b4 + white * 0.5329522
+      b5 = -0.7616 * b5 - white * 0.0168980
+      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
+      b6 = white * 0.115926
+    }
+  }
+
+  const source = ctx.createBufferSource()
+  source.buffer = buffer
+  source.loop = true
+  return source
+}
+
+function AmbientToggle() {
+  const [mode, setMode] = useState<AmbientMode>('off')
+  const ctxRef = useRef<AudioContext | null>(null)
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const gainRef = useRef<GainNode | null>(null)
+
+  const stop = useCallback(() => {
+    if (sourceRef.current) {
+      sourceRef.current.stop()
+      sourceRef.current.disconnect()
+      sourceRef.current = null
+    }
+    if (gainRef.current) {
+      gainRef.current.disconnect()
+      gainRef.current = null
+    }
+  }, [])
+
+  const play = useCallback((type: AmbientMode) => {
+    if (type === 'off') return
+    if (!ctxRef.current) {
+      ctxRef.current = new AudioContext()
+    }
+    const ctx = ctxRef.current
+    const gain = ctx.createGain()
+    gain.gain.value = 0.25
+    gain.connect(ctx.destination)
+    gainRef.current = gain
+
+    const node = createNoiseNode(ctx, type) as AudioBufferSourceNode
+    node.connect(gain)
+    node.start()
+    sourceRef.current = node
+  }, [])
+
+  const toggle = useCallback(
+    (selected: AmbientMode) => {
+      stop()
+      if (mode === selected) {
+        setMode('off')
+      } else {
+        setMode(selected)
+        play(selected)
+      }
+    },
+    [mode, stop, play],
+  )
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stop()
+      if (ctxRef.current) {
+        ctxRef.current.close()
+        ctxRef.current = null
+      }
+    }
+  }, [stop])
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 8,
+        justifyContent: 'center',
+        marginTop: 14,
+      }}
+    >
+      {AMBIENT_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => toggle(opt.value)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '5px 14px',
+            fontSize: '0.76rem',
+            borderRadius: 999,
+            border:
+              mode === opt.value
+                ? '1.5px solid var(--mood-color)'
+                : '1px solid var(--border-default)',
+            background:
+              mode === opt.value
+                ? 'color-mix(in srgb, var(--mood-color) 12%, transparent)'
+                : 'transparent',
+            color:
+              mode === opt.value ? 'var(--mood-color)' : 'var(--text-tertiary)',
+            cursor: 'pointer',
+            transition: 'all 0.25s ease',
+          }}
+        >
+          <span>{opt.icon}</span>
+          <span>{opt.label}</span>
+          {mode === opt.value && (
+            <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>●</span>
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function letterStorageKey(date: string): string {
+  // letter written on evening of `date` is for tomorrow
+  const d = new Date(date)
+  d.setDate(d.getDate() + 1)
+  return `aura_letter_${d.toISOString().slice(0, 10)}`
+}
+
+function LetterToTomorrow({ date }: { date: string }) {
+  const [letter, setLetter] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    const existing = window.localStorage.getItem(letterStorageKey(date))
+    if (existing) {
+      setLetter(existing)
+      setSaved(true)
+    }
+  }, [date])
+
+  const onSave = useCallback(() => {
+    const text = letter.trim()
+    if (!text) return
+    window.localStorage.setItem(letterStorageKey(date), text)
+    setSaved(true)
+  }, [letter, date])
+
+  return (
+    <div
+      className="glass-card anim-fade-in-up"
+      style={{
+        padding: 24,
+        borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+      }}
+    >
+      <SectionLabel>Thư gửi mình ngày mai</SectionLabel>
+      <p
+        style={{
+          margin: '0 0 12px',
+          fontSize: '0.85rem',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.55,
+        }}
+      >
+        Viết 1–2 câu cho chính mình vào sáng mai. Lời nhắn này sẽ hiện lại khi bạn mở checklist.
+      </p>
+      <textarea
+        className="input-underline"
+        value={letter}
+        onChange={(e) => {
+          setLetter(e.target.value)
+          setSaved(false)
+        }}
+        placeholder="Ngày mai, hãy nhớ rằng..."
+        rows={2}
+        maxLength={200}
+        style={{
+          width: '100%',
+          resize: 'none',
+          minHeight: 56,
+          fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+          fontSize: '0.92rem',
+          lineHeight: 1.55,
+          borderBottom: '1px solid var(--border-default)',
+          background: 'transparent',
+        }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 10,
+        }}
+      >
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+          {letter.length}/200
+        </span>
+        {saved ? (
+          <span
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--mood-color)',
+              fontWeight: 500,
+            }}
+          >
+            Đã lưu ✓
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onSave}
+            disabled={!letter.trim()}
+            style={{
+              borderRadius: 10,
+              cursor: letter.trim() ? 'pointer' : 'default',
+              padding: '6px 16px',
+              fontSize: '0.8rem',
+              opacity: letter.trim() ? 1 : 0.5,
+            }}
+          >
+            Lưu lại
+          </button>
+        )}
       </div>
     </div>
   )

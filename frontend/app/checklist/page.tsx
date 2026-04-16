@@ -73,6 +73,7 @@ export default function ChecklistPage() {
   const [noteSavedAt, setNoteSavedAt] = useState<number | null>(null)
   const [emotions, setEmotions] = useState<Record<number, PostEmotion>>({})
   const [seedQuote, setSeedQuote] = useState<string | null>(null)
+  const [letterFromMe, setLetterFromMe] = useState<string | null>(null)
   const [silentMode, setSilentMode] = useState(false)
   const [silentEmoji, setSilentEmoji] = useState<PostEmotion | null>(null)
 
@@ -108,6 +109,11 @@ export default function ChecklistPage() {
             setSeedQuote(`${daysAgo} ngày trước bạn viết: "${quote}"`)
           }
         }
+
+        // Letter from yesterday evening
+        const letterKey = `aura_letter_${date}`
+        const letter = window.localStorage.getItem(letterKey)
+        if (letter) setLetterFromMe(letter)
 
         const local = readLocal(date)
         const taskCount = data?.morning?.tasks?.length ?? 0
@@ -299,6 +305,7 @@ export default function ChecklistPage() {
 
         <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {seedQuote && <SeedOfDay quote={seedQuote} />}
+          {letterFromMe && <LetterFromYesterday text={letterFromMe} />}
 
           <div className="glass-card" style={{ padding: 28, textAlign: 'center' }}>
             <p
@@ -423,6 +430,7 @@ export default function ChecklistPage() {
 
       <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {seedQuote && <SeedOfDay quote={seedQuote} />}
+        {letterFromMe && <LetterFromYesterday text={letterFromMe} />}
 
         <ProgressCard done={doneCount} total={totalCount} pct={progressPct} />
 
@@ -528,6 +536,42 @@ function SeedOfDay({ quote }: { quote: string }) {
         }}
       >
         {quote}
+      </p>
+    </div>
+  )
+}
+
+function LetterFromYesterday({ text }: { text: string }) {
+  return (
+    <div
+      className="glass-card anim-fade-in"
+      style={{
+        padding: '16px 20px',
+        borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+        background: 'var(--bg-elevated)',
+      }}
+    >
+      <p
+        style={{
+          margin: '0 0 4px',
+          fontSize: '0.65rem',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        Thư từ mình hôm qua
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.9rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.55,
+          fontStyle: 'italic',
+        }}
+      >
+        &ldquo;{text}&rdquo;
       </p>
     </div>
   )

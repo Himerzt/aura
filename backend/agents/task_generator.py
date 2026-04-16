@@ -46,8 +46,14 @@ async def run_task_generator(
     framework = insight_result.get("recommended_framework", "behavioral_activation")
     anchors = user_profile.get("daily_anchors", [])
     past_attempts = user_profile.get("past_attempts", [])
+    goal = user_profile.get("goal", "")
+    context = user_profile.get("context", "")
+    support_style = user_profile.get("support_style", "balanced")
 
-    system_prompt = get_task_prompt(framework, energy_level, anchors)
+    system_prompt = get_task_prompt(
+        framework, energy_level, anchors,
+        goal=goal, context=context, support_style=support_style,
+    )
 
     user_content = (
         "## Psychology Insight\n"
@@ -55,8 +61,10 @@ async def run_task_generator(
         + "\n\n## User Context\n"
         + json.dumps(
             {
-                "goal": user_profile.get("goal", ""),
+                "goal": goal,
+                "context": context,
                 "past_attempts": past_attempts,
+                "support_style": support_style,
                 "available_time_minutes": available_time,
             },
             ensure_ascii=False,

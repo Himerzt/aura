@@ -67,6 +67,28 @@ async def get_profile():
     return load_profile()
 
 
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    goal: Optional[str] = None
+    context: Optional[str] = None
+    past_attempts: Optional[list[str]] = None
+    daily_anchors: Optional[list[str]] = None
+    chronotype: Optional[str] = None
+    support_style: Optional[str] = None
+
+
+@router.put("/profile")
+async def update_profile(req: ProfileUpdateRequest):
+    """Update user profile fields. Only provided fields are updated."""
+    profile = load_profile()
+    updates = req.model_dump(exclude_none=True)
+    if not updates:
+        return {"success": False, "message": "Không có trường nào để cập nhật."}
+    profile.update(updates)
+    save_profile(profile)
+    return {"success": True, "profile": profile}
+
+
 @router.post("/morning")
 async def morning_checkin(req: MorningRequest):
     """Run morning pipeline (Agent 1→2→3) and save result."""

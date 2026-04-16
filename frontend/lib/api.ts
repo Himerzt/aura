@@ -54,3 +54,12 @@ export interface WeeklyInsightResponse {
 export function getWeeklyInsight(): Promise<WeeklyInsightResponse> {
   return json<WeeklyInsightResponse>('/api/weekly-insight')
 }
+
+export function updateProfile(
+  fields: Partial<Omit<UserProfile, 'user_id' | 'created_at' | 'onboarding_completed'>>,
+): Promise<{ success: boolean; profile: UserProfile }> {
+  return json('/api/profile', {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  })
+}

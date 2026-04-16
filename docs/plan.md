@@ -16,7 +16,7 @@
 - [x] Phần 5.5 — Redesign UI "AURA GLOW" ✓ (2026-04-13)
 - [x] Phần 5.6 — Animations + Contrast + Button Prominence ✓ (2026-04-13)
 - [x] Phần 6 — Frontend: Onboarding + Morning
-- [ ] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions)
+- [x] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions) ✓ (2026-04-16)
 - [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
 - [ ] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal
 
@@ -367,24 +367,24 @@ Thêm CORS middleware cho localhost:3000.
 > Các ý tưởng UI/state-only, không cần agent mới, không cần schema migration. Fit trực tiếp vào 3 trang đang build.
 
 **Checklist page:**
-- [ ] **Micro-emotion 1-tap sau task** — 3 emoji (nhẹ nhõm / bình thường / kiệt sức) lưu vào `task.post_emotion`. Feed Agent 4 như micro-signal.
-- [ ] **Silent tick mode** — nếu `energy_level ≤ 3` buổi sáng, cho phép check-in 1 emoji duy nhất, bỏ qua form.
+- [x] **Micro-emotion 1-tap sau task** — 3 emoji (nhẹ nhõm / bình thường / kiệt sức) lưu vào `task.post_emotion`. Feed Agent 4 như micro-signal.
+- [x] **Silent tick mode** — nếu `energy_level ≤ 3` buổi sáng, cho phép check-in 1 emoji duy nhất, bỏ qua form.
 
 **Evening page:**
-- [ ] **Tasks-not-done reframe card** — hiển thị TRƯỚC reflection textarea: "X task chưa xong = data về giới hạn hôm nay, không phải thất bại".
-- [ ] **Guided reflection 3-prompt scaffolding** — thay textarea trống bằng 3 ô ngắn: "1 điều hôm nay dạy bạn / 1 điều làm bạn ngạc nhiên / 1 điều bạn biết ơn".
-- [ ] **Letter to tomorrow-me** — 1-2 câu user viết cho chính mình, sáng mai hiện ra ở đầu trang morning.
-- [ ] **Ambient mode** — toggle lofi/rain background audio khi làm reflection.
+- [x] **Tasks-not-done reframe card** — hiển thị TRƯỚC reflection textarea: "X task chưa xong = data về giới hạn hôm nay, không phải thất bại".
+- [x] **Guided reflection 3-prompt scaffolding** — thay textarea trống bằng 3 ô ngắn: "1 điều hôm nay dạy bạn / 1 điều làm bạn ngạc nhiên / 1 điều bạn biết ơn".
+- [x] **Letter to tomorrow-me** — 1-2 câu user viết cho chính mình, sáng mai hiện ra ở đầu trang morning.
+- [x] **Ambient mode** — toggle lofi/rain background audio khi làm reflection.
 
 **Dashboard page:**
-- [ ] **"Why-today" card** — hiển thị `profile.goal` + 1 câu trích từ reflection tuần trước.
-- [ ] **Anti-streak metric** — thay "streak liên tục" bằng **"days with intention"** (số ngày có check-in trong 30 ngày gần nhất). Giảm shame khi miss.
-- [ ] **Seed-of-day** — đầu mỗi trang hiển thị 1 câu trích từ chính reflection user tuần trước ("Ngày 12/4 bạn viết: ...").
-- [ ] **Share card milestone** — 7/30 ngày có design đẹp theo mood tốt nhất tuần, PNG export để share.
+- [x] **"Why-today" card** — hiển thị `profile.goal` + 1 câu trích từ reflection tuần trước.
+- [x] **Anti-streak metric** — thay "streak liên tục" bằng **"days with intention"** (số ngày có check-in trong 30 ngày gần nhất). Giảm shame khi miss.
+- [x] **Seed-of-day** — đầu mỗi trang hiển thị 1 câu trích từ chính reflection user tuần trước ("Ngày 12/4 bạn viết: ...").
+- [x] **Share card milestone** — 7/30 ngày có design đẹp theo mood tốt nhất tuần, PNG export để share.
 
 **Success Criteria:**
-- [ ] Không phát sinh endpoint mới (dùng `history.json` sẵn có)
-- [ ] Mọi extension có thể toggle off qua setting (không ép user)
+- [x] Không phát sinh endpoint mới (dùng `history.json` sẵn có)
+- [x] Mọi extension có thể toggle off qua setting (không ép user)
 
 ### Phần 7 — Bảng Kế Hoạch Thực Hiện
 
@@ -405,8 +405,8 @@ Thêm CORS middleware cho localhost:3000.
 | 11 | Guided 3-prompt reflection scaffolding (3 ô ngắn) | Evening | Easy | #9 | ✅ Done |
 | 12 | Submit → `POST /api/evening` → Agent 4 | Evening | Core | #9, #11 | ✅ Done |
 | 13 | Hiển thị Agent 4 result (summary, pattern, tomorrow_question) | Evening | Core | #12 | ✅ Done |
-| 14 | Letter to tomorrow-me input (1-2 câu) | Evening | Easy | #13 |
-| 15 | Ambient mode toggle (lofi/rain audio) | Evening | Easy | #9 |
+| 14 | Letter to tomorrow-me input (1-2 câu) | Evening | Easy | #13 | ✅ Done |
+| 15 | Ambient mode toggle (lofi/rain audio) | Evening | Easy | #9 | ✅ Done |
 | 16 | Button "Xem Dashboard" → redirect `/dashboard` | Evening | Core | #13 | ✅ Done |
 | 17 | Greeting với `profile.name` + timezone-aware | Dashboard | Core | Phần 4 API | ✅ Done |
 | 18 | StreakDisplay component với shield count | Dashboard | Core | #17 | ✅ Done |
@@ -415,14 +415,14 @@ Thêm CORS middleware cho localhost:3000.
 | 21 | CTA buttons: Check-in Sáng / Checklist / Evening | Dashboard | Core | #17 | ✅ Done |
 | 22 | Weekly insight card (nếu đủ 7 ngày) | Dashboard | Core | #17 | ✅ Done |
 | 23 | "Why-today" card (goal + quote từ reflection gần nhất) | Dashboard | Easy | #17, #6 | ✅ Done |
-| 24 | Anti-streak metric ("days with intention" 30 ngày) | Dashboard | Easy | #18 |
-| 25 | Share card milestone (7/30 ngày, PNG export) | Dashboard | Easy | #18 |
+| 24 | Anti-streak metric ("days with intention" 30 ngày) | Dashboard | Easy | #18 | ✅ Done |
+| 25 | Share card milestone (7/30 ngày, PNG export) | Dashboard | Easy | #18 | ✅ Done |
 
 **Chiến lược ship:**
 1. **Milestone A (Checklist Core)** — STT 1-5: user có thể tick task cơ bản. Ship được. ✅ **Done** (2026-04-14)
 2. **Milestone B (Evening Core)** — STT 9, 12, 13, 16: vòng lặp morning→evening khép kín. ✅ **Done** (2026-04-15)
 3. **Milestone C (Dashboard Core)** — STT 17-22: user thấy được big picture. ✅ **Done** (2026-04-16)
-4. **Milestone D (Easy polish)** — STT 6-8, 10-11, 14-15, 23-25: layer lên sau khi 3 trang ổn định.
+4. **Milestone D (Easy polish)** — STT 6-8, 10-11, 14-15, 23-25: layer lên sau khi 3 trang ổn định. ✅ **Done** (2026-04-16)
 
 **Rule:** Không bắt đầu Milestone tiếp theo nếu Milestone trước chưa test qua browser + approve.
 
