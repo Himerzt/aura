@@ -194,7 +194,9 @@ export default function EveningPage() {
           doneCount={doneIds.length}
         />
 
-        <ReflectionInput
+        {notDoneTasks.length > 0 && <ReframeCard count={notDoneTasks.length} />}
+
+        <GuidedReflection
           value={reflection}
           onChange={setReflection}
           disabled={submitting}
@@ -371,7 +373,43 @@ function TaskGroup({
   )
 }
 
-function ReflectionInput({
+function ReframeCard({ count }: { count: number }) {
+  return (
+    <div
+      className="glass-card anim-fade-in-up"
+      style={{
+        padding: '18px 22px',
+        borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+        background: 'var(--bg-elevated)',
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.92rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.6,
+        }}
+      >
+        {count === 1
+          ? '1 task chưa xong — đó là dữ liệu về giới hạn hôm nay, không phải thất bại.'
+          : `${count} task chưa xong — đó là dữ liệu về giới hạn hôm nay, không phải thất bại.`}
+      </p>
+      <p
+        style={{
+          margin: '8px 0 0',
+          fontSize: '0.82rem',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.55,
+        }}
+      >
+        Bạn vẫn xuất hiện ở đây, và điều đó đã đủ quan trọng.
+      </p>
+    </div>
+  )
+}
+
+function GuidedReflection({
   value,
   onChange,
   disabled,
@@ -380,47 +418,173 @@ function ReflectionInput({
   onChange: (v: string) => void
   disabled: boolean
 }) {
+  const [mode, setMode] = useState<'guided' | 'free'>('guided')
+  const [q1, setQ1] = useState('')
+  const [q2, setQ2] = useState('')
+  const [q3, setQ3] = useState('')
+
+  // Sync guided fields → combined reflection value
+  useEffect(() => {
+    if (mode !== 'guided') return
+    const parts = [q1, q2, q3].filter((s) => s.trim())
+    onChange(parts.join('\n\n'))
+  }, [q1, q2, q3, mode, onChange])
+
+  if (mode === 'free') {
+    return (
+      <div className="glass-card" style={{ padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <label
+            style={{
+              fontSize: '0.7rem',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--text-tertiary)',
+            }}
+          >
+            Reflection
+          </label>
+          <button
+            type="button"
+            onClick={() => setMode('guided')}
+            style={{
+              fontSize: '0.72rem',
+              color: 'var(--mood-color)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textUnderlineOffset: '3px',
+            }}
+          >
+            Dùng 3 câu hỏi gợi ý
+          </button>
+        </div>
+        <textarea
+          className="input-underline"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          placeholder="Hôm nay bạn học được gì về chính mình?"
+          rows={5}
+          style={{
+            width: '100%',
+            resize: 'vertical',
+            minHeight: 120,
+            fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+            fontSize: '0.95rem',
+            lineHeight: 1.6,
+            borderBottom: '1px solid var(--border-default)',
+            background: 'transparent',
+          }}
+        />
+        <p style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+          {value.trim().length} ký tự
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="glass-card" style={{ padding: 24 }}>
-      <label
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <label
+          style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Reflection
+        </label>
+        <button
+          type="button"
+          onClick={() => setMode('free')}
+          style={{
+            fontSize: '0.72rem',
+            color: 'var(--mood-color)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '3px',
+          }}
+        >
+          Viết tự do
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <GuidedField
+          label="1 điều hôm nay dạy bạn"
+          value={q1}
+          onChange={setQ1}
+          disabled={disabled}
+          placeholder="Tôi nhận ra rằng..."
+        />
+        <GuidedField
+          label="1 điều làm bạn ngạc nhiên"
+          value={q2}
+          onChange={setQ2}
+          disabled={disabled}
+          placeholder="Điều bất ngờ là..."
+        />
+        <GuidedField
+          label="1 điều bạn biết ơn"
+          value={q3}
+          onChange={setQ3}
+          disabled={disabled}
+          placeholder="Tôi biết ơn vì..."
+        />
+      </div>
+    </div>
+  )
+}
+
+function GuidedField({
+  label,
+  value,
+  onChange,
+  disabled,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  disabled: boolean
+  placeholder: string
+}) {
+  return (
+    <div>
+      <p
         style={{
-          display: 'block',
-          fontSize: '0.7rem',
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: 'var(--text-tertiary)',
-          marginBottom: 10,
+          margin: '0 0 6px',
+          fontSize: '0.78rem',
+          color: 'var(--text-secondary)',
+          fontWeight: 500,
         }}
       >
-        Reflection
-      </label>
+        {label}
+      </p>
       <textarea
         className="input-underline"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        placeholder="Hôm nay bạn học được gì về chính mình?"
-        rows={5}
+        placeholder={placeholder}
+        rows={2}
         style={{
           width: '100%',
           resize: 'vertical',
-          minHeight: 120,
+          minHeight: 52,
           fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
-          fontSize: '0.95rem',
-          lineHeight: 1.6,
+          fontSize: '0.9rem',
+          lineHeight: 1.55,
           borderBottom: '1px solid var(--border-default)',
           background: 'transparent',
         }}
       />
-      <p
-        style={{
-          marginTop: 8,
-          fontSize: '0.72rem',
-          color: 'var(--text-tertiary)',
-        }}
-      >
-        {value.trim().length} ký tự
-      </p>
     </div>
   )
 }

@@ -168,6 +168,9 @@ export default function DashboardPage() {
         {/* ── 7-Day Mood Chart (STT 20) ── */}
         <MoodChart7Days history={history} />
 
+        {/* ── Why-today Card (STT 23) ── */}
+        <WhyTodayCard goal={profile?.goal} history={history} />
+
         {/* ── CTA Buttons (STT 21) ── */}
         <CTAButtons
           hasMorning={!!today?.morning}
@@ -463,6 +466,60 @@ function CTAButtons({
         >
           Check-in Sáng
         </button>
+      )}
+    </div>
+  )
+}
+
+// ── Why-today Card (STT 23) ──────────────────────────────────
+
+function WhyTodayCard({ goal, history }: { goal?: string; history: HistoryDay[] }) {
+  if (!goal) return null
+
+  // Find the most recent reflection quote (not today)
+  const today = new Date().toISOString().slice(0, 10)
+  const pastWithEvening = history
+    .filter((d) => d.date !== today && d.evening)
+    .sort((a, b) => b.date.localeCompare(a.date))
+
+  const recentQuote = pastWithEvening.length > 0
+    ? pastWithEvening[0].evening?.tomorrow_question || pastWithEvening[0].evening?.summary || null
+    : null
+
+  return (
+    <div
+      className="glass-card"
+      style={{
+        padding: 24,
+        borderLeft: '2px solid var(--mood-color)',
+      }}
+    >
+      <SectionLabel>Tại sao hôm nay</SectionLabel>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '1.02rem',
+          fontWeight: 500,
+          color: 'var(--text-primary)',
+          lineHeight: 1.55,
+        }}
+      >
+        {goal}
+      </p>
+      {recentQuote && (
+        <p
+          style={{
+            margin: '12px 0 0',
+            fontSize: '0.88rem',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.55,
+            fontStyle: 'italic',
+            borderTop: '1px solid var(--border-default)',
+            paddingTop: 12,
+          }}
+        >
+          &ldquo;{recentQuote}&rdquo;
+        </p>
       )}
     </div>
   )

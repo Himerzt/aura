@@ -397,12 +397,12 @@ Thêm CORS middleware cho localhost:3000.
 | 3 | Progress bar real-time (X/Y tasks done) | Checklist | Core | #2 | ✅ Done |
 | 4 | Textarea "Ghi nhận nhanh" (mid-day note) | Checklist | Core | #1 | ✅ Done |
 | 5 | Button "Kết thúc ngày" → redirect `/evening` | Checklist | Core | #2, #4 | ✅ Done |
-| 6 | Seed-of-day banner đầu trang (trích reflection cũ) | Checklist | Easy | #1 |
-| 7 | Micro-emotion 1-tap (3 emoji) sau mỗi task tick | Checklist | Easy | #2 |
-| 8 | Silent tick mode (energy ≤ 3 → chỉ 1 emoji) | Checklist | Easy | #2, #7 |
+| 6 | Seed-of-day banner đầu trang (trích reflection cũ) | Checklist | Easy | #1 | ✅ Done |
+| 7 | Micro-emotion 1-tap (3 emoji) sau mỗi task tick | Checklist | Easy | #2 | ✅ Done |
+| 8 | Silent tick mode (energy ≤ 3 → chỉ 1 emoji) | Checklist | Easy | #2, #7 | ✅ Done |
 | 9 | Fetch today tasks + so sánh done/not-done | Evening | Core | #5 | ✅ Done |
-| 10 | Tasks-not-done reframe card (hiện trước reflection) | Evening | Easy | #9 |
-| 11 | Guided 3-prompt reflection scaffolding (3 ô ngắn) | Evening | Easy | #9 |
+| 10 | Tasks-not-done reframe card (hiện trước reflection) | Evening | Easy | #9 | ✅ Done |
+| 11 | Guided 3-prompt reflection scaffolding (3 ô ngắn) | Evening | Easy | #9 | ✅ Done |
 | 12 | Submit → `POST /api/evening` → Agent 4 | Evening | Core | #9, #11 | ✅ Done |
 | 13 | Hiển thị Agent 4 result (summary, pattern, tomorrow_question) | Evening | Core | #12 | ✅ Done |
 | 14 | Letter to tomorrow-me input (1-2 câu) | Evening | Easy | #13 |
@@ -414,7 +414,7 @@ Thêm CORS middleware cho localhost:3000.
 | 20 | Mini 7-day mood chart (SVG/div bars) | Dashboard | Core | #17 | ✅ Done |
 | 21 | CTA buttons: Check-in Sáng / Checklist / Evening | Dashboard | Core | #17 | ✅ Done |
 | 22 | Weekly insight card (nếu đủ 7 ngày) | Dashboard | Core | #17 | ✅ Done |
-| 23 | "Why-today" card (goal + quote từ reflection gần nhất) | Dashboard | Easy | #17, #6 |
+| 23 | "Why-today" card (goal + quote từ reflection gần nhất) | Dashboard | Easy | #17, #6 | ✅ Done |
 | 24 | Anti-streak metric ("days with intention" 30 ngày) | Dashboard | Easy | #18 |
 | 25 | Share card milestone (7/30 ngày, PNG export) | Dashboard | Easy | #18 |
 
