@@ -79,11 +79,16 @@ def save_morning(morning_data: dict) -> None:
     _save_history(history)
 
 
-def save_evening(evening_data: dict) -> None:
+def save_evening(evening_data: dict, completed_task_ids: list[int] | None = None) -> None:
     today = date.today().isoformat()
     history = _load_history()
     entry = history.setdefault(today, {})
     entry["evening"] = evening_data
+    # Update task completed status based on checklist
+    if completed_task_ids is not None and "morning" in entry:
+        tasks = entry["morning"].get("tasks", [])
+        for i, task in enumerate(tasks):
+            task["completed"] = i in completed_task_ids
     _save_history(history)
 
 

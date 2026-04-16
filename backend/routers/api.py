@@ -129,7 +129,7 @@ async def evening_checkin(req: EveningRequest):
         "pattern_detected": result["pattern_detected"],
         "tomorrow_question": result["tomorrow_question"],
     }
-    save_evening(evening_data)
+    save_evening(evening_data, completed_task_ids=req.completed_task_ids)
 
     return result
 

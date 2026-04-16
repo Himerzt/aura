@@ -359,8 +359,8 @@ Thêm CORS middleware cho localhost:3000.
 - [x] Tick task có animation smooth
 - [x] Progress bar cập nhật real-time
 - [x] Evening submit → Agent 4 result hiển thị với tomorrow_question
-- [ ] Dashboard hiển thị streak đúng
-- [ ] 7-day mood chart render đúng với data từ history
+- [x] Dashboard hiển thị streak đúng
+- [x] 7-day mood chart render đúng với data từ history
 
 ### Phần 7 — Mở Rộng (Easy)
 
@@ -408,12 +408,12 @@ Thêm CORS middleware cho localhost:3000.
 | 14 | Letter to tomorrow-me input (1-2 câu) | Evening | Easy | #13 |
 | 15 | Ambient mode toggle (lofi/rain audio) | Evening | Easy | #9 |
 | 16 | Button "Xem Dashboard" → redirect `/dashboard` | Evening | Core | #13 | ✅ Done |
-| 17 | Greeting với `profile.name` + timezone-aware | Dashboard | Core | Phần 4 API |
-| 18 | StreakDisplay component với shield count | Dashboard | Core | #17 |
-| 19 | Quick stats card (ngày, tasks hôm nay, mood trend) | Dashboard | Core | #17 |
-| 20 | Mini 7-day mood chart (SVG/div bars) | Dashboard | Core | #17 |
-| 21 | CTA buttons: Check-in Sáng / Checklist / Evening | Dashboard | Core | #17 |
-| 22 | Weekly insight card (nếu đủ 7 ngày) | Dashboard | Core | #17 |
+| 17 | Greeting với `profile.name` + timezone-aware | Dashboard | Core | Phần 4 API | ✅ Done |
+| 18 | StreakDisplay component với shield count | Dashboard | Core | #17 | ✅ Done |
+| 19 | Quick stats card (ngày, tasks hôm nay, mood trend) | Dashboard | Core | #17 | ✅ Done |
+| 20 | Mini 7-day mood chart (SVG/div bars) | Dashboard | Core | #17 | ✅ Done |
+| 21 | CTA buttons: Check-in Sáng / Checklist / Evening | Dashboard | Core | #17 | ✅ Done |
+| 22 | Weekly insight card (nếu đủ 7 ngày) | Dashboard | Core | #17 | ✅ Done |
 | 23 | "Why-today" card (goal + quote từ reflection gần nhất) | Dashboard | Easy | #17, #6 |
 | 24 | Anti-streak metric ("days with intention" 30 ngày) | Dashboard | Easy | #18 |
 | 25 | Share card milestone (7/30 ngày, PNG export) | Dashboard | Easy | #18 |
@@ -421,7 +421,7 @@ Thêm CORS middleware cho localhost:3000.
 **Chiến lược ship:**
 1. **Milestone A (Checklist Core)** — STT 1-5: user có thể tick task cơ bản. Ship được. ✅ **Done** (2026-04-14)
 2. **Milestone B (Evening Core)** — STT 9, 12, 13, 16: vòng lặp morning→evening khép kín. ✅ **Done** (2026-04-15)
-3. **Milestone C (Dashboard Core)** — STT 17-22: user thấy được big picture.
+3. **Milestone C (Dashboard Core)** — STT 17-22: user thấy được big picture. ✅ **Done** (2026-04-16)
 4. **Milestone D (Easy polish)** — STT 6-8, 10-11, 14-15, 23-25: layer lên sau khi 3 trang ổn định.
 
 **Rule:** Không bắt đầu Milestone tiếp theo nếu Milestone trước chưa test qua browser + approve.

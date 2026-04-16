@@ -1,4 +1,4 @@
-import type { DayEntry, EveningResult, MorningResult, UserProfile } from './types'
+import type { DayEntry, EveningResult, History, MorningResult, StreakInfo, UserProfile } from './types'
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -35,4 +35,22 @@ export function postEvening(
     method: 'POST',
     body: JSON.stringify({ user_input, completed_task_ids }),
   })
+}
+
+export function getStreak(): Promise<StreakInfo> {
+  return json<StreakInfo>('/api/streak')
+}
+
+export function getHistory(): Promise<DayEntry[]> {
+  return json<DayEntry[]>('/api/history')
+}
+
+export interface WeeklyInsightResponse {
+  available: boolean
+  days_remaining: number
+  insight: string | null
+}
+
+export function getWeeklyInsight(): Promise<WeeklyInsightResponse> {
+  return json<WeeklyInsightResponse>('/api/weekly-insight')
 }
