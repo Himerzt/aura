@@ -194,7 +194,7 @@ export default function MorningPage() {
             }}
           >
             <div className="anim-breathe">
-              <MoodOrb mood="stable" size={120} />
+              <MoodOrb mood="stable" size={120} energy={5} />
             </div>
             <p
               style={{
@@ -267,7 +267,7 @@ function MorningResultView({
           flexWrap: 'wrap',
         }}
       >
-        <MoodOrb mood={wellness.mood_state} size={96} />
+        <MoodOrb mood={wellness.mood_state} size={96} energy={wellness.energy_level} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <p
             style={{

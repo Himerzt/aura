@@ -315,6 +315,48 @@ body > * {
   100% { background-position:  250% center; }
 }
 
+/* ── MoodOrb glowPulse — speed tied to energy ── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 30px var(--orb-glow), 0 0 60px var(--orb-glow); transform: scale(1); }
+  50%      { box-shadow: 0 0 50px var(--orb-glow), 0 0 90px var(--orb-glow); transform: scale(1.04); }
+}
+
+@keyframes auraFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* ── Particle burst on task complete ── */
+@keyframes particleBurst {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Number count-up shimmer flash ── */
+@keyframes countFlash {
+  0%   { color: var(--mood-color); text-shadow: 0 0 12px var(--mood-glow); }
+  100% { color: var(--amber, #F5A623); text-shadow: none; }
+}
+
+/* ── Milestone celebration ── */
+@keyframes celebrationSlideIn {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  15%  { transform: translateY(0); opacity: 1; }
+  85%  { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes confettiDrop {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(60px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Page transition ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ============================================================
    SCROLLBAR + SELECTION
    ============================================================ */
@@ -637,5 +679,72 @@ body > * {
     border: 2px solid var(--mood-color);
     animation: sonarPing 2s ease-out infinite;
     pointer-events: none;
+  }
+
+  /* ── Page transition wrapper ── */
+  .page-enter {
+    animation: pageEnter 0.45s ease-out forwards;
+  }
+
+  /* ── Particle burst container (CSS-only) ── */
+  .particle-burst {
+    position: relative;
+  }
+  .particle-burst::before,
+  .particle-burst::after,
+  .particle-burst .particle-1,
+  .particle-burst .particle-2,
+  .particle-burst .particle-3,
+  .particle-burst .particle-4 {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mood-color);
+    pointer-events: none;
+    opacity: 0;
+  }
+  .particle-burst.burst-active::before {
+    animation: particleBurst 0.55s ease-out forwards;
+    top: 50%; left: 50%;
+    transform-origin: center;
+    box-shadow:
+      -14px -14px 0 var(--mood-color),
+       14px -14px 0 var(--mood-color-soft),
+      -14px  14px 0 var(--mood-color-soft),
+       14px  14px 0 var(--mood-color);
+  }
+  .particle-burst.burst-active::after {
+    animation: particleBurst 0.55s 0.05s ease-out forwards;
+    top: 50%; left: 50%;
+    box-shadow:
+       0px -18px 0 var(--mood-color),
+       18px  0px 0 var(--mood-color-soft),
+       0px  18px 0 var(--mood-color),
+      -18px  0px 0 var(--mood-color-soft);
+  }
+
+  /* ── Milestone toast ── */
+  .milestone-toast {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    animation: celebrationSlideIn 4.5s ease-in-out forwards;
+    pointer-events: none;
+  }
+  .milestone-toast .confetti-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    animation: confettiDrop 1.2s ease-in forwards;
+  }
+
+  /* ── Count-up flash ── */
+  .count-flash {
+    animation: countFlash 0.6s ease-out forwards;
   }
 }

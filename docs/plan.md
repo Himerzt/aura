@@ -432,6 +432,16 @@ Thêm CORS middleware cho localhost:3000.
 
 **Mục tiêu:** App trở nên đáng nhớ về cảm giác.
 
+### Phần 8 — Bảng Kế Hoạch Thực Hiện
+
+| Milestone | Nội dung | Status |
+|-----------|----------|--------|
+| A | Streak Shield System (Backend) | [x] ✓ |
+| B | Animations & Visual Feedback (Frontend) | [x] ✓ |
+| C | Responsive + Error States (Frontend) | [ ] |
+| D | Medium Extensions: Backend | [ ] |
+| E | Medium Extensions: Frontend | [ ] |
+
 **Việc cần làm:**
 
 **Streak Shield System (`backend/core/memory.py`):**

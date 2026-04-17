@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
+
 interface StreakDisplayProps {
   currentStreak: number
   shieldCount?: number
@@ -17,6 +19,11 @@ function ShieldIcon({ filled }: { filled: boolean }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      style={{
+        transition: 'transform 0.3s ease',
+        transform: filled ? 'scale(1)' : 'scale(0.85)',
+        opacity: filled ? 1 : 0.5,
+      }}
     >
       <path
         d="M10 1L2 4.5V10C2 14.8 5.4 19.3 10 21C14.6 19.3 18 14.8 18 10V4.5L10 1Z"
@@ -26,6 +33,50 @@ function ShieldIcon({ filled }: { filled: boolean }) {
         strokeLinejoin="round"
       />
     </svg>
+  )
+}
+
+/**
+ * Animated counter that counts from 0 to target over ~600ms.
+ */
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0)
+  const [flashing, setFlashing] = useState(false)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (value <= 0) {
+      setDisplay(0)
+      return
+    }
+
+    const duration = Math.min(600, value * 80) // cap at 600ms
+    const start = performance.now()
+
+    function tick(now: number) {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      // Ease-out quad
+      const eased = 1 - (1 - progress) * (1 - progress)
+      setDisplay(Math.round(eased * value))
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        // Flash on finish
+        setFlashing(true)
+        setTimeout(() => setFlashing(false), 600)
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [value])
+
+  return (
+    <span className={flashing ? 'count-flash' : ''}>
+      {display}
+    </span>
   )
 }
 
@@ -68,7 +119,7 @@ export default function StreakDisplay({
             gap: 8,
           }}
         >
-          {/* Large streak number */}
+          {/* Large streak number — animated count-up */}
           <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
@@ -79,7 +130,7 @@ export default function StreakDisplay({
                 lineHeight: 1,
               }}
             >
-              {currentStreak}
+              <AnimatedNumber value={currentStreak} />
             </span>
 
             {/* Completed checkmark */}

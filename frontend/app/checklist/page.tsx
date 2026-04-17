@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToday, getHistory } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
@@ -650,11 +650,28 @@ function TaskRow({
   emotion: PostEmotion | null
   onEmotion: (e: PostEmotion) => void
 }) {
+  const [justCompleted, setJustCompleted] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleToggle() {
+    if (!done) {
+      // About to complete → trigger burst
+      setJustCompleted(true)
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => setJustCompleted(false), 600)
+    }
+    onToggle()
+  }
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={handleToggle}
         aria-pressed={done}
         className="glass-card hover-lift"
         style={{
@@ -672,7 +689,7 @@ function TaskRow({
           borderRadius: done && !emotion ? '12px 12px 0 0' : undefined,
         }}
       >
-        <Checkbox done={done} index={index + 1} />
+        <Checkbox done={done} index={index + 1} justCompleted={justCompleted} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p
             style={{
@@ -787,10 +804,11 @@ function TaskRow({
   )
 }
 
-function Checkbox({ done, index }: { done: boolean; index: number }) {
+function Checkbox({ done, index, justCompleted }: { done: boolean; index: number; justCompleted?: boolean }) {
   return (
     <span
       aria-hidden
+      className={`particle-burst${justCompleted ? ' burst-active' : ''}`}
       style={{
         width: 32,
         height: 32,
@@ -804,11 +822,14 @@ function Checkbox({ done, index }: { done: boolean; index: number }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background 0.3s ease, box-shadow 0.3s ease',
+        transition: 'background 0.3s ease, box-shadow 0.3s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+        transform: justCompleted ? 'scale(1.2)' : 'scale(1)',
         fontSize: '0.85rem',
         fontWeight: 600,
         color: done ? 'var(--btn-text)' : 'var(--text-secondary)',
         fontFamily: 'var(--font-heading, Sora, system-ui)',
+        overflow: 'visible',
+        position: 'relative',
       }}
     >
       {done ? (

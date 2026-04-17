@@ -103,24 +103,72 @@ def get_history_7_days() -> list[dict]:
     return result
 
 
+def _count_completed_days_in_week(history: dict, week_start: date) -> int:
+    """Count days with morning entry in a Mon-Sun week."""
+    count = 0
+    for i in range(7):
+        day = (week_start + timedelta(days=i)).isoformat()
+        if "morning" in history.get(day, {}):
+            count += 1
+    return count
+
+
+def _calculate_shields(history: dict, today: date) -> int:
+    """Calculate total shields earned from completed weeks (≥5/7 days).
+    Shields are consumed when a missed day would break a streak."""
+    shields_earned = 0
+    shields_used = 0
+
+    # Check completed weeks (not the current partial week)
+    # Go back up to 52 weeks
+    current_monday = today - timedelta(days=today.weekday())
+    for w in range(1, 53):
+        week_start = current_monday - timedelta(weeks=w)
+        if _count_completed_days_in_week(history, week_start) >= 5:
+            shields_earned += 1
+
+    # Count shields used: missed days inside an otherwise active streak
+    # Walk backwards from today; each gap day that didn't break streak used a shield
+    streak_active = True
+    for i in range(1, 365):
+        day = (today - timedelta(days=i)).isoformat()
+        entry = history.get(day, {})
+        if "morning" in entry:
+            continue
+        # Missed day — check if streak continued past it
+        prev_day = (today - timedelta(days=i + 1)).isoformat()
+        if "morning" in history.get(prev_day, {}):
+            shields_used += 1
+        else:
+            break  # Two consecutive misses = streak truly broken
+
+    return max(shields_earned - shields_used, 0)
+
+
 def get_streak() -> dict:
     history = _load_history()
     today = date.today()
     current_streak = 0
+    shields = _calculate_shields(history, today)
 
     for i in range(365):
         day = (today - timedelta(days=i)).isoformat()
         entry = history.get(day, {})
-        # A day counts if it has a morning entry
         if "morning" in entry:
             current_streak += 1
         elif i == 0:
             # Today has no entry yet — streak continues from yesterday
             continue
         else:
+            # Missed day — use a shield if available
+            if shields > 0:
+                shields -= 1
+                current_streak += 1  # Shield preserves the streak
+                continue
             break
 
     return {
         "current_streak": current_streak,
         "today_completed": "morning" in history.get(today.isoformat(), {}),
+        "shield_count": _calculate_shields(history, today),
     }

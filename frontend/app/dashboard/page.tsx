@@ -6,6 +6,7 @@ import { getProfile, getStreak, getHistory, getToday, getWeeklyInsight } from '@
 import type { WeeklyInsightResponse } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
 import StreakDisplay from '@/components/aura/StreakDisplay'
+import MilestoneToast from '@/components/aura/MilestoneToast'
 import type { DayEntry, MoodState, UserProfile, StreakInfo } from '@/lib/types'
 
 // ── History entry as returned by GET /api/history ──
@@ -114,6 +115,9 @@ export default function DashboardPage() {
 
   return (
     <PageShell>
+      {/* ── Milestone celebration toast ── */}
+      <MilestoneToast streak={streak?.current_streak ?? 0} />
+
       {/* ── Greeting (STT 17) ── */}
       <header className="anim-fade-in-up" style={{ textAlign: 'center', marginBottom: 32 }}>
         <p
