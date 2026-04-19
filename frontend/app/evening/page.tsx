@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToday, postEvening } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
+import ErrorCard, { InlineError } from '@/components/ui/ErrorCard'
+import { EveningSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, EveningResult, MoodState, Task } from '@/lib/types'
 
 function todayKey(): string {
@@ -31,12 +33,13 @@ export default function EveningPage() {
   const router = useRouter()
   const { setMood } = useMood()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const [entry, setEntry] = useState<DayEntry | null>(null)
   const [doneIds, setDoneIds] = useState<number[]>([])
   const [reflection, setReflection] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<unknown>(null)
   const [result, setResult] = useState<EveningResult | null>(null)
 
   const date = useMemo(() => todayKey(), [])
@@ -44,6 +47,7 @@ export default function EveningPage() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setError(null)
     getToday()
       .then((data) => {
         if (cancelled) return
@@ -57,7 +61,7 @@ export default function EveningPage() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : 'Không tải được dữ liệu hôm nay')
+        setError(e)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -65,7 +69,7 @@ export default function EveningPage() {
     return () => {
       cancelled = true
     }
-  }, [date, setMood])
+  }, [date, setMood, reloadKey])
 
   const tasks: Task[] = entry?.morning?.tasks ?? []
   const doneTasks = tasks.filter((_, i) => doneIds.includes(i))
@@ -73,7 +77,7 @@ export default function EveningPage() {
 
   const onSubmit = useCallback(async () => {
     if (!reflection.trim()) {
-      setSubmitError('Hãy viết vài dòng trước khi gửi.')
+      setSubmitError(new Error('Hãy viết vài dòng trước khi gửi.'))
       return
     }
     setSubmitting(true)
@@ -82,7 +86,7 @@ export default function EveningPage() {
       const res = await postEvening(reflection.trim(), doneIds)
       setResult(res)
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Không gửi được reflection')
+      setSubmitError(e)
     } finally {
       setSubmitting(false)
     }
@@ -91,9 +95,7 @@ export default function EveningPage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đang tải buổi tối...</p>
-        </div>
+        <EveningSkeleton />
       </PageShell>
     )
   }
@@ -101,17 +103,7 @@ export default function EveningPage() {
   if (error) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in-up" style={{ padding: 28 }}>
-          <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6 }}>{error}</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => router.refresh()}
-            style={{ marginTop: 18, borderRadius: 12, cursor: 'pointer' }}
-          >
-            Thử lại
-          </button>
-        </div>
+        <ErrorCard error={error} onRetry={() => setReloadKey((k) => k + 1)} />
       </PageShell>
     )
   }
@@ -203,16 +195,11 @@ export default function EveningPage() {
           disabled={submitting}
         />
 
-        {submitError && (
-          <div
-            className="glass-card"
-            style={{
-              padding: 16,
-              borderLeft: '2px solid #ef5350',
-            }}
-          >
-            <p style={{ margin: 0, color: '#ff8a80', fontSize: '0.9rem' }}>{submitError}</p>
-          </div>
+        {submitError != null && (
+          <InlineError
+            error={submitError}
+            onRetry={() => { setSubmitError(null); void onSubmit() }}
+          />
         )}
 
         <div
@@ -257,7 +244,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <div
       style={{
         minHeight: '100vh',
-        padding: '48px 24px 64px',
+        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px) clamp(32px, 8vw, 64px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -841,8 +828,9 @@ function AmbientToggle() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            padding: '5px 14px',
-            fontSize: '0.76rem',
+            padding: '10px 18px',
+            minHeight: 44,
+            fontSize: '0.8rem',
             borderRadius: 999,
             border:
               mode === opt.value

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MoodOrb from '@/components/aura/MoodOrb'
 import { useMood } from '@/lib/mood-context'
+import { InlineError } from '@/components/ui/ErrorCard'
 import { postMorning, getProfile } from '@/lib/api'
 import type { MorningResult, Task } from '@/lib/types'
 
@@ -31,7 +32,7 @@ export default function MorningPage() {
   const { setMood } = useMood()
   const [userInput, setUserInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
   const [result, setResult] = useState<MorningResult | null>(null)
   const [userName, setUserName] = useState<string>('')
 
@@ -67,7 +68,7 @@ export default function MorningPage() {
         setMood('overwhelmed')
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Đã có lỗi xảy ra')
+      setError(e)
     } finally {
       setLoading(false)
     }
@@ -77,7 +78,7 @@ export default function MorningPage() {
     <div
       style={{
         minHeight: '100vh',
-        padding: '48px 24px 64px',
+        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px) clamp(32px, 8vw, 64px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -173,10 +174,11 @@ export default function MorningPage() {
                 Gửi cho AURA
               </button>
             </div>
-            {error && (
-              <p style={{ color: 'var(--mood-overwhelmed)', fontSize: '0.85rem', margin: 0 }}>
-                {error}
-              </p>
+            {error != null && (
+              <InlineError
+                error={error}
+                onRetry={() => { setError(null); void handleSubmit() }}
+              />
             )}
           </div>
         )}

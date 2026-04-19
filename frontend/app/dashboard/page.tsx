@@ -7,6 +7,8 @@ import type { WeeklyInsightResponse } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
 import StreakDisplay from '@/components/aura/StreakDisplay'
 import MilestoneToast from '@/components/aura/MilestoneToast'
+import ErrorCard from '@/components/ui/ErrorCard'
+import { DashboardSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, MoodState, UserProfile, StreakInfo } from '@/lib/types'
 
 // ── History entry as returned by GET /api/history ──
@@ -41,7 +43,8 @@ export default function DashboardPage() {
   const router = useRouter()
   const { setMood } = useMood()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [streak, setStreak] = useState<StreakInfo | null>(null)
@@ -51,6 +54,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
+    setError(null)
 
     Promise.all([
       getProfile(),
@@ -72,21 +77,19 @@ export default function DashboardPage() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : 'Không tải được dữ liệu')
+        setError(e)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
 
     return () => { cancelled = true }
-  }, [setMood])
+  }, [setMood, reloadKey])
 
   if (loading) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đang tải dashboard...</p>
-        </div>
+        <DashboardSkeleton />
       </PageShell>
     )
   }
@@ -94,17 +97,7 @@ export default function DashboardPage() {
   if (error) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in-up" style={{ padding: 28 }}>
-          <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6 }}>{error}</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => window.location.reload()}
-            style={{ marginTop: 18, borderRadius: 12, cursor: 'pointer' }}
-          >
-            Thử lại
-          </button>
-        </div>
+        <ErrorCard error={error} onRetry={() => setReloadKey((k) => k + 1)} />
       </PageShell>
     )
   }
@@ -207,7 +200,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <div
       style={{
         minHeight: '100vh',
-        padding: '48px 24px 64px',
+        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px) clamp(32px, 8vw, 64px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

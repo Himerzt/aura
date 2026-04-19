@@ -438,7 +438,7 @@ Thêm CORS middleware cho localhost:3000.
 |-----------|----------|--------|
 | A | Streak Shield System (Backend) | [x] ✓ |
 | B | Animations & Visual Feedback (Frontend) | [x] ✓ |
-| C | Responsive + Error States (Frontend) | [ ] |
+| C | Responsive + Error States (Frontend) | [x] ✓ |
 | D | Medium Extensions: Backend | [ ] |
 | E | Medium Extensions: Frontend | [ ] |
 

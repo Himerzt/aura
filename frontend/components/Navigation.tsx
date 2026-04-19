@@ -34,8 +34,8 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
         fontSize: compact ? '1rem' : '0.8rem',
         fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
         transition: 'all 0.2s ease',
-        minWidth: compact ? 36 : 'auto',
-        minHeight: compact ? 36 : 'auto',
+        minWidth: compact ? 44 : 'auto',
+        minHeight: compact ? 44 : 44,
         whiteSpace: 'nowrap',
       }}
       onMouseEnter={(e) => {

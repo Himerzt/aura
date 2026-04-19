@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToday, getHistory } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
+import ErrorCard from '@/components/ui/ErrorCard'
+import { ChecklistSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, MoodState, Task } from '@/lib/types'
 
 const MOOD_LABELS: Record<MoodState, string> = {
@@ -66,7 +68,8 @@ export default function ChecklistPage() {
   const router = useRouter()
   const { setMood } = useMood()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const [entry, setEntry] = useState<DayEntry | null>(null)
   const [doneIds, setDoneIds] = useState<number[]>([])
   const [note, setNote] = useState<string>('')
@@ -82,6 +85,7 @@ export default function ChecklistPage() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setError(null)
 
     Promise.all([getToday(), getHistory()])
       .then(([data, historyData]) => {
@@ -128,7 +132,7 @@ export default function ChecklistPage() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : 'Không tải được dữ liệu hôm nay')
+        setError(e)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -136,7 +140,7 @@ export default function ChecklistPage() {
     return () => {
       cancelled = true
     }
-  }, [date, setMood])
+  }, [date, setMood, reloadKey])
 
   const tasks: Task[] = entry?.morning?.tasks ?? []
   const totalCount = tasks.length
@@ -211,9 +215,7 @@ export default function ChecklistPage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đang tải checklist...</p>
-        </div>
+        <ChecklistSkeleton rows={3} />
       </PageShell>
     )
   }
@@ -221,17 +223,7 @@ export default function ChecklistPage() {
   if (error) {
     return (
       <PageShell>
-        <div className="glass-card anim-fade-in-up" style={{ padding: 28 }}>
-          <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6 }}>{error}</p>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => router.refresh()}
-            style={{ marginTop: 18, borderRadius: 12, cursor: 'pointer' }}
-          >
-            Thử lại
-          </button>
-        </div>
+        <ErrorCard error={error} onRetry={() => setReloadKey((k) => k + 1)} />
       </PageShell>
     )
   }
@@ -494,7 +486,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <div
       style={{
         minHeight: '100vh',
-        padding: '48px 24px 64px',
+        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px) clamp(32px, 8vw, 64px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -779,11 +771,16 @@ function TaskRow({
               title={opt.label}
               style={{
                 fontSize: '1.2rem',
-                padding: '4px 8px',
-                borderRadius: 8,
+                padding: '8px 12px',
+                minWidth: 44,
+                minHeight: 44,
+                borderRadius: 10,
                 border: '1px solid var(--border-default)',
                 background: 'transparent',
                 cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 transition: 'transform 0.15s ease, background 0.15s ease',
               }}
               onMouseEnter={(e) => {

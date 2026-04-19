@@ -383,6 +383,54 @@ body > * {
 }
 
 /* ============================================================
+   RESPONSIVE — mobile-first refinement (≤768px)
+   - Page shells use 24px top/side padding by default, but we
+     cut to 20px on small phones and add bottom clearance so
+     the fixed bottom-nav never covers content.
+   - Touch targets stay ≥44px.
+   - Body font keeps readable on 375px.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Content area must clear the mobile bottom nav (~62px + safe area) */
+  main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Slightly tighter horizontal padding on narrow phones */
+  .glass-card,
+  .surface-card {
+    --card-padding: 20px;
+  }
+
+  /* Smaller heading on small screens */
+  h1 { font-size: clamp(1.4rem, 5.5vw, 1.8rem); }
+  h2 { font-size: clamp(1.15rem, 4.5vw, 1.4rem); }
+}
+
+@media (max-width: 420px) {
+  .glass-card,
+  .surface-card {
+    --card-padding: 18px;
+    border-radius: 14px;
+  }
+}
+
+/* iPhone SE (≤375px): slightly looser buttons for thumb reach */
+@media (max-width: 380px) {
+  .btn-mood,
+  .btn-ghost,
+  .btn-danger {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Ensure all interactive elements have accessible touch targets */
+button, a[role="button"], input[type="button"], input[type="submit"] {
+  touch-action: manipulation;
+}
+
+/* ============================================================
    COMPONENT UTILITIES
    ============================================================ */
 @layer components {
