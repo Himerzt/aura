@@ -1,12 +1,14 @@
 import json
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 PROFILE_PATH = DATA_DIR / "profile.json"
 HISTORY_PATH = DATA_DIR / "history.json"
+
+VALID_FRICTION_REASONS = {"tired", "distracted", "forgot", "no_meaning"}
 
 DEFAULT_PROFILE = {
     "user_id": "local_user",
@@ -74,6 +76,9 @@ def save_morning(morning_data: dict) -> None:
     today = date.today().isoformat()
     history = _load_history()
     entry = history.setdefault(today, {})
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    for task in morning_data.get("tasks", []):
+        task.setdefault("created_at", now_iso)
     entry["morning"] = morning_data
     entry.setdefault("streak_day", get_streak()["current_streak"] + 1)
     _save_history(history)
@@ -172,3 +177,127 @@ def get_streak() -> dict:
         "today_completed": "morning" in history.get(today.isoformat(), {}),
         "shield_count": _calculate_shields(history, today),
     }
+
+
+# ── Medium extensions (Phần 8D) ──────────────────────────────────────────────
+
+def _resolve_date(date_str: Optional[str]) -> str:
+    return date_str or date.today().isoformat()
+
+
+def _get_task(history: dict, date_str: str, task_index: int) -> dict:
+    entry = history.get(date_str, {})
+    tasks = entry.get("morning", {}).get("tasks", [])
+    if task_index < 0 or task_index >= len(tasks):
+        raise ValueError(f"task_index {task_index} out of range for {date_str}")
+    return tasks[task_index]
+
+
+def log_friction(
+    task_index: int,
+    reason: str,
+    note: str = "",
+    date_str: Optional[str] = None,
+) -> dict:
+    """Log friction (skip reason) for a task. Returns the updated task."""
+    if reason not in VALID_FRICTION_REASONS:
+        raise ValueError(
+            f"reason must be one of {sorted(VALID_FRICTION_REASONS)}, got '{reason}'"
+        )
+    date_str = _resolve_date(date_str)
+    history = _load_history()
+    task = _get_task(history, date_str, task_index)
+    task["friction"] = {
+        "reason": reason,
+        "note": note,
+        "logged_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    _save_history(history)
+    return task
+
+
+def track_time_to_first_action(
+    task_index: int,
+    date_str: Optional[str] = None,
+) -> dict:
+    """Stamp first tick timestamp + compute delay. Idempotent."""
+    date_str = _resolve_date(date_str)
+    history = _load_history()
+    task = _get_task(history, date_str, task_index)
+
+    if "first_action_at" in task:
+        return task  # already tracked
+
+    now = datetime.now()
+    task["first_action_at"] = now.isoformat(timespec="seconds")
+
+    created_raw = task.get("created_at")
+    if created_raw:
+        try:
+            created = datetime.fromisoformat(created_raw)
+            delay = max(0, int((now - created).total_seconds() / 60))
+            task["first_action_delay_minutes"] = delay
+        except ValueError:
+            pass
+    _save_history(history)
+    return task
+
+
+def get_framework_diversity_7d() -> dict:
+    """Count framework usage in last 7 days."""
+    return get_pattern_radar(days=7)
+
+
+def get_pattern_radar(days: int = 7) -> dict:
+    """Count framework usage in last N days. Returns dict keyed by framework."""
+    history = _load_history()
+    today = date.today()
+    counts: dict[str, int] = {}
+    for i in range(days):
+        day = (today - timedelta(days=i)).isoformat()
+        framework = history.get(day, {}).get("morning", {}).get("framework")
+        if framework:
+            counts[framework] = counts.get(framework, 0) + 1
+    return counts
+
+
+def get_energy_mood_matrix_7d() -> list[dict]:
+    """Return [{date, mood, energy}] for last 7 days (oldest → newest)."""
+    history = _load_history()
+    today = date.today()
+    result = []
+    for i in range(6, -1, -1):
+        day = (today - timedelta(days=i)).isoformat()
+        morning = history.get(day, {}).get("morning", {})
+        if morning:
+            result.append({
+                "date": day,
+                "mood": morning.get("mood_state"),
+                "energy": morning.get("energy_level"),
+            })
+    return result
+
+
+def replace_task(
+    task_index: int,
+    new_task: dict,
+    date_str: Optional[str] = None,
+) -> dict:
+    """Replace a task with new_task, preserving original as `replaced_from`."""
+    date_str = _resolve_date(date_str)
+    history = _load_history()
+    task = _get_task(history, date_str, task_index)
+
+    replaced_from = {k: v for k, v in task.items() if k != "replaced_from"}
+    new_task.setdefault("completed", False)
+    new_task.setdefault("created_at", datetime.now().isoformat(timespec="seconds"))
+    new_task["replaced_from"] = replaced_from
+
+    history[date_str]["morning"]["tasks"][task_index] = new_task
+    _save_history(history)
+    return new_task
+
+
+def get_today_morning() -> dict:
+    """Return today's morning entry (empty dict if none)."""
+    return get_today_entry().get("morning", {})

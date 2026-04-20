@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import MoodOrb from '@/components/aura/MoodOrb'
 import { useMood } from '@/lib/mood-context'
 import { InlineError } from '@/components/ui/ErrorCard'
-import { postMorning, getProfile } from '@/lib/api'
-import type { MorningResult, Task } from '@/lib/types'
+import { postMorning, getProfile, getHistory } from '@/lib/api'
+import type { DayEntry, MorningResult, Task } from '@/lib/types'
 
 const MOOD_LABELS: Record<string, string> = {
   energized: 'Tràn năng lượng',
@@ -27,6 +27,51 @@ const FRAMEWORK_LABELS: Record<string, string> = {
   dunning_kruger: 'Dunning-Kruger',
 }
 
+interface PreCommit {
+  when: string
+  what: string
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function readPreCommit(): PreCommit | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(`aura_precommit_${todayIso()}`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<PreCommit>
+    if (parsed.when && parsed.what) {
+      return { when: parsed.when, what: parsed.what }
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function computeMissedDays(history: DayEntry[]): number {
+  // history is last 7 days (newest→oldest). Count leading gap days before first morning entry.
+  const arr = history as Array<{ date?: string; morning?: unknown }>
+  const today = todayIso()
+  // Walk day-by-day backwards from yesterday; count consecutive days with no morning entry.
+  const byDate = new Map<string, boolean>()
+  for (const d of arr) {
+    if (d.date) byDate.set(d.date, !!d.morning)
+  }
+  let gap = 0
+  const cursor = new Date(today)
+  cursor.setDate(cursor.getDate() - 1)
+  for (let i = 0; i < 7; i++) {
+    const iso = cursor.toISOString().slice(0, 10)
+    if (byDate.get(iso)) break
+    gap++
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return gap
+}
+
 export default function MorningPage() {
   const router = useRouter()
   const { setMood } = useMood()
@@ -35,6 +80,9 @@ export default function MorningPage() {
   const [error, setError] = useState<unknown>(null)
   const [result, setResult] = useState<MorningResult | null>(null)
   const [userName, setUserName] = useState<string>('')
+  const [preCommit, setPreCommit] = useState<PreCommit | null>(null)
+  const [missedDays, setMissedDays] = useState<number>(0)
+  const [gentleMode, setGentleMode] = useState(false)
 
   // Fetch profile — if not onboarded, redirect
   useEffect(() => {
@@ -53,6 +101,29 @@ export default function MorningPage() {
       cancelled = true
     }
   }, [router])
+
+  // Read last-night pre-commit + detect miss ≥ 3 days
+  useEffect(() => {
+    const pc = readPreCommit()
+    setPreCommit(pc)
+    getHistory()
+      .then((hist) => {
+        const gap = computeMissedDays(hist)
+        setMissedDays(gap)
+        if (gap >= 3) setGentleMode(true)
+      })
+      .catch(() => {})
+  }, [])
+
+  const applyPreCommit = () => {
+    if (!preCommit) return
+    const sentence = `Sáng nay tôi sẽ ${preCommit.what} (đã hứa: lúc ${preCommit.when}).`
+    setUserInput((prev) => (prev.trim() ? `${prev}\n\n${sentence}` : sentence))
+  }
+
+  const applyGentleStart = () => {
+    setUserInput('Tôi muốn bắt đầu lại bằng một điều nhỏ nhất có thể.')
+  }
 
   async function handleSubmit() {
     const input = userInput.trim()
@@ -126,6 +197,118 @@ export default function MorningPage() {
             </p>
           )}
         </header>
+
+        {/* Gentle re-entry banner — appears only when user missed ≥ 3 days */}
+        {!result && !loading && gentleMode && (
+          <div
+            className="glass-card anim-fade-in-up"
+            style={{
+              padding: 20,
+              marginBottom: 16,
+              borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+              background: 'var(--bg-elevated)',
+            }}
+          >
+            <p
+              style={{
+                margin: '0 0 6px',
+                fontSize: '0.65rem',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              Chào mừng trở lại · {missedDays} ngày vắng
+            </p>
+            <p
+              style={{
+                margin: '0 0 12px',
+                fontSize: '0.95rem',
+                color: 'var(--text-primary)',
+                lineHeight: 1.6,
+              }}
+            >
+              Không sao cả. Hôm nay bạn muốn bắt đầu lại bằng điều gì nhỏ nhất?
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={applyGentleStart}
+                style={{
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  padding: '6px 14px',
+                  fontSize: '0.78rem',
+                }}
+              >
+                Dùng câu gợi ý
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setGentleMode(false)}
+                style={{
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  padding: '6px 14px',
+                  fontSize: '0.78rem',
+                  opacity: 0.75,
+                }}
+              >
+                Tôi tự viết
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Pre-commit IF-THEN from last night */}
+        {!result && !loading && preCommit && (
+          <div
+            className="glass-card anim-fade-in-up"
+            style={{
+              padding: 20,
+              marginBottom: 16,
+              borderLeft: '2px solid var(--mood-color)',
+              background: 'var(--bg-elevated)',
+            }}
+          >
+            <p
+              style={{
+                margin: '0 0 6px',
+                fontSize: '0.65rem',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              Đêm qua bạn đã khoá
+            </p>
+            <p
+              style={{
+                margin: '0 0 12px',
+                fontSize: '0.95rem',
+                color: 'var(--text-primary)',
+                lineHeight: 1.6,
+              }}
+            >
+              Ngày mai lúc <b>{preCommit.when}</b> tôi sẽ <b>{preCommit.what}</b>.
+            </p>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={applyPreCommit}
+              style={{
+                borderRadius: 999,
+                cursor: 'pointer',
+                padding: '6px 14px',
+                fontSize: '0.78rem',
+              }}
+            >
+              Dùng làm input sáng nay
+            </button>
+          </div>
+        )}
 
         {/* Input form */}
         {!result && !loading && (

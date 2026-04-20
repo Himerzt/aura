@@ -36,6 +36,12 @@ export interface UserProfile {
 }
 
 // ---- Task ----
+export interface FrictionLog {
+  reason: 'tired' | 'distracted' | 'forgot' | 'no_meaning'
+  note?: string
+  logged_at?: string
+}
+
 export interface Task {
   id?: number
   title: string
@@ -43,6 +49,11 @@ export interface Task {
   estimated_minutes: number
   difficulty?: Difficulty
   completed?: boolean
+  created_at?: string
+  first_action_at?: string
+  first_action_delay_minutes?: number
+  friction?: FrictionLog
+  replaced_from?: Partial<Task>
 }
 
 // ---- Morning Pipeline Result ----

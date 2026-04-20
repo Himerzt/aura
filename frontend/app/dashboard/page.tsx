@@ -2,8 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getProfile, getStreak, getHistory, getToday, getWeeklyInsight } from '@/lib/api'
-import type { WeeklyInsightResponse } from '@/lib/api'
+import {
+  getProfile,
+  getStreak,
+  getHistory,
+  getToday,
+  getWeeklyInsight,
+  getPatternRadar,
+  getEnergyMoodMatrix,
+  type WeeklyInsightResponse,
+  type PatternRadarResponse,
+  type EnergyMoodPoint,
+} from '@/lib/api'
+import type { Framework } from '@/lib/types'
 import { useMood } from '@/lib/mood-context'
 import StreakDisplay from '@/components/aura/StreakDisplay'
 import MilestoneToast from '@/components/aura/MilestoneToast'
@@ -51,6 +62,8 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<HistoryDay[]>([])
   const [today, setToday] = useState<DayEntry | null>(null)
   const [weeklyInsight, setWeeklyInsight] = useState<WeeklyInsightResponse | null>(null)
+  const [radar, setRadar] = useState<PatternRadarResponse | null>(null)
+  const [energyMood, setEnergyMood] = useState<EnergyMoodPoint[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -63,14 +76,18 @@ export default function DashboardPage() {
       getHistory() as Promise<HistoryDay[]>,
       getToday(),
       getWeeklyInsight(),
+      getPatternRadar(30).catch(() => null),
+      getEnergyMoodMatrix().catch(() => ({ data: [] as EnergyMoodPoint[] })),
     ])
-      .then(([prof, str, hist, tod, wi]) => {
+      .then(([prof, str, hist, tod, wi, radarRes, emRes]) => {
         if (cancelled) return
         setProfile(prof)
         setStreak(str)
         setHistory(hist)
         setToday(tod)
         setWeeklyInsight(wi)
+        setRadar(radarRes)
+        setEnergyMood(emRes?.data ?? [])
         if (tod?.morning?.mood_state) {
           setMood(tod.morning.mood_state as MoodState)
         }
@@ -164,6 +181,18 @@ export default function DashboardPage() {
 
         {/* ── 7-Day Mood Chart (STT 20) ── */}
         <MoodChart7Days history={history} />
+
+        {/* ── First-action insight (Phần 8E) ── */}
+        <FirstActionInsight history={history} />
+
+        {/* ── Framework diversity warning (Phần 8E) ── */}
+        <FrameworkDiversityWarning history={history} />
+
+        {/* ── Pattern radar 30d (Phần 8E) ── */}
+        {radar && <PatternRadar counts={radar.counts} days={radar.days} />}
+
+        {/* ── Energy × mood scatter (Phần 8E) ── */}
+        <EnergyMoodScatter points={energyMood} />
 
         {/* ── Why-today Card (STT 23) ── */}
         <WhyTodayCard goal={profile?.goal} history={history} />
@@ -814,6 +843,436 @@ function WeeklyInsightCard({ data }: { data: WeeklyInsightResponse | null }) {
         }}
       >
         {data.insight}
+      </p>
+    </div>
+  )
+}
+
+// ── First-action delay insight (Phần 8E) ──────────────────────
+
+function FirstActionInsight({ history }: { history: HistoryDay[] }) {
+  // Compute avg first-action delay minutes across all tasks in history with created_at stamps
+  const delays: number[] = []
+  let daysOver3h = 0
+  const byDay: Record<string, number[]> = {}
+
+  for (const day of history) {
+    const tasks = day.morning?.tasks ?? []
+    const dayDelays: number[] = []
+    for (const t of tasks) {
+      if (typeof t.first_action_delay_minutes === 'number') {
+        delays.push(t.first_action_delay_minutes)
+        dayDelays.push(t.first_action_delay_minutes)
+      }
+    }
+    if (dayDelays.length) {
+      byDay[day.date] = dayDelays
+      const avgDay = dayDelays.reduce((a, b) => a + b, 0) / dayDelays.length
+      if (avgDay > 180) daysOver3h++
+    }
+  }
+
+  if (delays.length < 2) return null
+
+  const avg = Math.round(delays.reduce((a, b) => a + b, 0) / delays.length)
+  const showWarning = daysOver3h >= 3
+
+  return (
+    <div
+      className="glass-card"
+      style={{
+        padding: 24,
+        borderLeft: showWarning ? '2px solid #ff9b7a' : '2px solid var(--mood-color)',
+      }}
+    >
+      <SectionLabel>Thời gian chạm task đầu tiên</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: showWarning ? '#ff9b7a' : 'var(--mood-color)',
+          }}
+        >
+          {avg < 60 ? `${avg}m` : `${(avg / 60).toFixed(1)}h`}
+        </span>
+        <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+          trung bình từ khi tạo → tick
+        </span>
+      </div>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.82rem',
+          color: 'var(--text-tertiary)',
+          lineHeight: 1.55,
+        }}
+      >
+        {showWarning
+          ? 'Có vẻ bạn đang phân tích quá nhiều trước khi bắt đầu. Thử áp dụng 2-minute rule cho task tiếp theo nhé.'
+          : delays.length < 5
+          ? 'AURA cần thêm dữ liệu để đưa ra nhận xét chính xác.'
+          : 'Bạn đang bắt đầu task khá nhanh sau khi tạo — duy trì nhé.'}
+      </p>
+    </div>
+  )
+}
+
+// ── Framework diversity warning (Phần 8E) ──────────────────────
+
+const FRAMEWORK_LABELS: Record<string, string> = {
+  '80_20_pareto': 'Pareto 80/20',
+  behavioral_activation: 'Behavioral Activation',
+  implementation_intention: 'Implementation Intention',
+  habit_stacking: 'Habit Stacking',
+  self_compassion: 'Self-Compassion',
+  progress_principle: 'Progress Principle',
+  two_minute_rule: '2-Minute Rule',
+  dunning_kruger: 'Dunning-Kruger',
+}
+
+function FrameworkDiversityWarning({ history }: { history: HistoryDay[] }) {
+  // Sort by date desc; find longest consecutive streak of same framework from most recent
+  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date))
+  let streakFw: string | null = null
+  let streakLen = 0
+  for (const day of sorted) {
+    const fw = day.morning?.framework
+    if (!fw) break
+    if (streakFw === null) {
+      streakFw = fw
+      streakLen = 1
+    } else if (fw === streakFw) {
+      streakLen++
+    } else {
+      break
+    }
+  }
+
+  if (!streakFw || streakLen < 5) return null
+
+  return (
+    <div
+      className="glass-card anim-fade-in"
+      style={{
+        padding: 20,
+        borderLeft: '2px solid #ff9b7a',
+        background: 'var(--bg-elevated)',
+      }}
+    >
+      <SectionLabel>Pattern lặp</SectionLabel>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.92rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.6,
+        }}
+      >
+        AURA đã chọn <b>{FRAMEWORK_LABELS[streakFw] ?? streakFw}</b> {streakLen} ngày liên tiếp.
+        Có thể bạn đang ở một giai đoạn — cũng có thể AURA đang hiểu chưa đủ. Nếu thấy chệch,
+        mô tả kỹ hơn vào sáng mai.
+      </p>
+    </div>
+  )
+}
+
+// ── Pattern radar 30d (Phần 8E) ────────────────────────────────
+
+const FRAMEWORK_ORDER: Framework[] = [
+  '80_20_pareto',
+  'behavioral_activation',
+  'implementation_intention',
+  'habit_stacking',
+  'self_compassion',
+  'progress_principle',
+  'two_minute_rule',
+  'dunning_kruger',
+]
+
+function PatternRadar({
+  counts,
+  days,
+}: {
+  counts: Partial<Record<Framework, number>>
+  days: number
+}) {
+  const total = Object.values(counts).reduce((a: number, b) => a + (b ?? 0), 0)
+  if (total === 0) {
+    return (
+      <div className="glass-card" style={{ padding: 24 }}>
+        <SectionLabel>Framework radar ({days} ngày)</SectionLabel>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          Chưa có dữ liệu framework trong {days} ngày qua.
+        </p>
+      </div>
+    )
+  }
+
+  const maxCount = Math.max(1, ...FRAMEWORK_ORDER.map((fw) => counts[fw] ?? 0))
+  const cx = 140
+  const cy = 140
+  const radius = 100
+  const n = FRAMEWORK_ORDER.length
+
+  const angle = (i: number) => (i * 2 * Math.PI) / n - Math.PI / 2
+  const point = (i: number, r: number) => ({
+    x: cx + r * Math.cos(angle(i)),
+    y: cy + r * Math.sin(angle(i)),
+  })
+
+  const polygon = FRAMEWORK_ORDER.map((fw, i) => {
+    const c = counts[fw] ?? 0
+    const r = (c / maxCount) * radius
+    return point(i, r)
+  })
+  const polygonPath = polygon.map((p) => `${p.x},${p.y}`).join(' ')
+
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <SectionLabel>Framework radar ({days} ngày)</SectionLabel>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginTop: 8,
+        }}
+      >
+        <svg
+          width="280"
+          height="280"
+          viewBox="0 0 280 280"
+          aria-label="Pattern radar chart"
+          style={{ maxWidth: '100%', height: 'auto' }}
+        >
+          {/* Grid rings */}
+          {[0.25, 0.5, 0.75, 1].map((scale) => (
+            <polygon
+              key={scale}
+              points={FRAMEWORK_ORDER.map((_, i) => {
+                const p = point(i, radius * scale)
+                return `${p.x},${p.y}`
+              }).join(' ')}
+              fill="none"
+              stroke="var(--border-default)"
+              strokeWidth="1"
+              opacity={0.4}
+            />
+          ))}
+          {/* Axes */}
+          {FRAMEWORK_ORDER.map((_, i) => {
+            const p = point(i, radius)
+            return (
+              <line
+                key={i}
+                x1={cx}
+                y1={cy}
+                x2={p.x}
+                y2={p.y}
+                stroke="var(--border-default)"
+                strokeWidth="1"
+                opacity={0.35}
+              />
+            )
+          })}
+          {/* Data polygon */}
+          <polygon
+            points={polygonPath}
+            fill="color-mix(in srgb, var(--mood-color) 28%, transparent)"
+            stroke="var(--mood-color)"
+            strokeWidth="1.8"
+          />
+          {/* Data points */}
+          {polygon.map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={3}
+              fill="var(--mood-color)"
+            />
+          ))}
+          {/* Labels */}
+          {FRAMEWORK_ORDER.map((fw, i) => {
+            const p = point(i, radius + 20)
+            const count = counts[fw] ?? 0
+            const label = FRAMEWORK_LABELS[fw] ?? fw
+            // Shorten label to first word for compactness
+            const short = label.split(/[\s-]/)[0]
+            return (
+              <text
+                key={fw}
+                x={p.x}
+                y={p.y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="10"
+                fill={count > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)'}
+                fontWeight={count > 0 ? 600 : 400}
+              >
+                {short} {count > 0 ? `·${count}` : ''}
+              </text>
+            )
+          })}
+        </svg>
+      </div>
+      <p
+        style={{
+          margin: '8px 0 0',
+          fontSize: '0.76rem',
+          color: 'var(--text-tertiary)',
+          lineHeight: 1.5,
+          textAlign: 'center',
+        }}
+      >
+        {total} ngày có framework trong {days} ngày qua
+      </p>
+    </div>
+  )
+}
+
+// ── Energy × mood correlation scatter (Phần 8E) ────────────────
+
+const MOOD_SCORE: Record<string, number> = {
+  numb: 1,
+  overwhelmed: 2,
+  anxious: 3,
+  stable: 4,
+  energized: 5,
+}
+
+function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
+  const valid = points.filter(
+    (p): p is Required<EnergyMoodPoint> & { mood: string; energy: number } =>
+      !!p.mood && typeof p.energy === 'number' && p.energy > 0,
+  )
+
+  if (valid.length < 2) {
+    return (
+      <div className="glass-card" style={{ padding: 24 }}>
+        <SectionLabel>Năng lượng × Mood (7 ngày)</SectionLabel>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          Cần ít nhất 2 ngày có dữ liệu mood + energy để vẽ biểu đồ.
+        </p>
+      </div>
+    )
+  }
+
+  const w = 280
+  const h = 180
+  const padL = 36
+  const padR = 12
+  const padT = 12
+  const padB = 28
+  const innerW = w - padL - padR
+  const innerH = h - padT - padB
+
+  // X = mood score (1..5), Y = energy (1..10)
+  const xFor = (m: string) => padL + ((MOOD_SCORE[m] ?? 3) - 1) / 4 * innerW
+  const yFor = (e: number) => padT + (1 - (e - 1) / 9) * innerH
+
+  const moodOrder = ['numb', 'overwhelmed', 'anxious', 'stable', 'energized']
+  const moodShort: Record<string, string> = {
+    numb: 'Numb',
+    overwhelmed: 'Over',
+    anxious: 'Anx',
+    stable: 'Stable',
+    energized: 'Energ',
+  }
+
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <SectionLabel>Năng lượng × Mood (7 ngày)</SectionLabel>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: 8,
+        }}
+      >
+        <svg
+          width={w}
+          height={h}
+          viewBox={`0 0 ${w} ${h}`}
+          style={{ maxWidth: '100%', height: 'auto' }}
+          aria-label="Energy vs mood scatter"
+        >
+          {/* Y axis ticks 2,5,8 */}
+          {[2, 5, 8].map((e) => (
+            <g key={e}>
+              <line
+                x1={padL}
+                x2={w - padR}
+                y1={yFor(e)}
+                y2={yFor(e)}
+                stroke="var(--border-default)"
+                strokeWidth="1"
+                opacity={0.3}
+              />
+              <text
+                x={padL - 6}
+                y={yFor(e)}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fontSize="9"
+                fill="var(--text-tertiary)"
+              >
+                {e}
+              </text>
+            </g>
+          ))}
+          {/* X axis labels */}
+          {moodOrder.map((m, i) => (
+            <text
+              key={m}
+              x={padL + (i / 4) * innerW}
+              y={h - 10}
+              textAnchor="middle"
+              fontSize="9"
+              fill="var(--text-tertiary)"
+            >
+              {moodShort[m]}
+            </text>
+          ))}
+          {/* Points */}
+          {valid.map((p, i) => (
+            <g key={i}>
+              <circle
+                cx={xFor(p.mood)}
+                cy={yFor(p.energy)}
+                r={6}
+                fill="color-mix(in srgb, var(--mood-color) 70%, transparent)"
+                stroke="var(--mood-color)"
+                strokeWidth="1.2"
+              >
+                <title>
+                  {p.date} — {p.mood} / energy {p.energy}
+                </title>
+              </circle>
+              <text
+                x={xFor(p.mood)}
+                y={yFor(p.energy) - 9}
+                textAnchor="middle"
+                fontSize="8"
+                fill="var(--text-tertiary)"
+              >
+                {p.date.slice(5)}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <p
+        style={{
+          margin: '6px 0 0',
+          fontSize: '0.72rem',
+          color: 'var(--text-tertiary)',
+          textAlign: 'center',
+        }}
+      >
+        Trục X = mood (tệ → tốt) · Trục Y = energy (1–10)
       </p>
     </div>
   )

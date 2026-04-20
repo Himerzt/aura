@@ -1,4 +1,12 @@
-import type { DayEntry, EveningResult, History, MorningResult, StreakInfo, UserProfile } from './types'
+import type {
+  DayEntry,
+  EveningResult,
+  Framework,
+  MorningResult,
+  StreakInfo,
+  Task,
+  UserProfile,
+} from './types'
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -62,4 +70,76 @@ export function updateProfile(
     method: 'PUT',
     body: JSON.stringify(fields),
   })
+}
+
+// ── Phần 8E: Medium extensions ─────────────────────────────────────────────
+
+export type FrictionReason = 'tired' | 'distracted' | 'forgot' | 'no_meaning'
+
+export interface FrictionPayload {
+  task_index: number
+  reason: FrictionReason
+  note?: string
+  date?: string
+}
+
+export function postFriction(
+  payload: FrictionPayload,
+): Promise<{ success: boolean; task: Task }> {
+  return json('/api/task/friction', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function postFirstAction(
+  task_index: number,
+  date?: string,
+): Promise<{ success: boolean; task: Task }> {
+  return json('/api/task/first-action', {
+    method: 'POST',
+    body: JSON.stringify({ task_index, date }),
+  })
+}
+
+export interface RetryEasierResponse {
+  success: boolean
+  task: Task
+  new_energy_level: number
+  encouragement: string
+}
+
+export function postRetryEasier(
+  task_index: number,
+  date?: string,
+): Promise<RetryEasierResponse> {
+  return json<RetryEasierResponse>('/api/task/retry-easier', {
+    method: 'POST',
+    body: JSON.stringify({ task_index, date }),
+  })
+}
+
+export interface PatternRadarResponse {
+  days: number
+  counts: Partial<Record<Framework, number>>
+}
+
+export function getPatternRadar(days: 7 | 30 = 30): Promise<PatternRadarResponse> {
+  return json<PatternRadarResponse>(`/api/pattern-radar?days=${days}`)
+}
+
+export interface EnergyMoodPoint {
+  date: string
+  mood: string | null
+  energy: number | null
+}
+
+export function getEnergyMoodMatrix(): Promise<{ data: EnergyMoodPoint[] }> {
+  return json(`/api/energy-mood-matrix`)
+}
+
+export function getFrameworkDiversity(): Promise<{
+  counts: Partial<Record<Framework, number>>
+}> {
+  return json(`/api/framework-diversity`)
 }

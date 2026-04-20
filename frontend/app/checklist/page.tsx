@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getToday, getHistory } from '@/lib/api'
+import {
+  getToday,
+  getHistory,
+  postFirstAction,
+  postFriction,
+  postRetryEasier,
+  type FrictionReason,
+} from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
 import ErrorCard from '@/components/ui/ErrorCard'
 import { ChecklistSkeleton } from '@/components/ui/Skeleton'
@@ -23,12 +30,27 @@ const EMOTION_OPTIONS: { value: PostEmotion; emoji: string; label: string }[] = 
   { value: 'exhausted', emoji: '😩', label: 'Kiệt sức' },
 ]
 
+const FRICTION_OPTIONS: { value: FrictionReason; label: string }[] = [
+  { value: 'tired', label: 'Mệt' },
+  { value: 'distracted', label: 'Bị phân tâm' },
+  { value: 'forgot', label: 'Quên' },
+  { value: 'no_meaning', label: 'Không thấy ý nghĩa' },
+]
+
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
 function storageKey(date: string): string {
   return `aura_checklist_${date}`
+}
+
+function middayMoodKey(date: string): string {
+  return `aura_midday_mood_${date}`
+}
+
+function firstActionStampKey(date: string): string {
+  return `aura_first_action_${date}`
 }
 
 type LocalChecklistState = {
@@ -64,6 +86,28 @@ function writeLocal(date: string, state: LocalChecklistState): void {
   }
 }
 
+function readFirstActionStamps(date: string): Record<number, true> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(firstActionStampKey(date))
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<number, true>
+  } catch {
+    return {}
+  }
+}
+
+function markFirstActionStamp(date: string, index: number): void {
+  if (typeof window === 'undefined') return
+  try {
+    const map = readFirstActionStamps(date)
+    map[index] = true
+    window.localStorage.setItem(firstActionStampKey(date), JSON.stringify(map))
+  } catch {
+    // ignore
+  }
+}
+
 export default function ChecklistPage() {
   const router = useRouter()
   const { setMood } = useMood()
@@ -79,6 +123,10 @@ export default function ChecklistPage() {
   const [letterFromMe, setLetterFromMe] = useState<string | null>(null)
   const [silentMode, setSilentMode] = useState(false)
   const [silentEmoji, setSilentEmoji] = useState<PostEmotion | null>(null)
+  const [middayMood, setMiddayMood] = useState<number | null>(null)
+  const [frictionTaskIndex, setFrictionTaskIndex] = useState<number | null>(null)
+  const [retryingIndex, setRetryingIndex] = useState<number | null>(null)
+  const [retryEncouragement, setRetryEncouragement] = useState<string | null>(null)
 
   const date = useMemo(() => todayKey(), [])
 
@@ -95,14 +143,14 @@ export default function ChecklistPage() {
           setMood(data.morning.mood_state as MoodState)
         }
 
-        // Silent tick mode: energy ≤ 3
         const energy = data?.morning?.energy_level ?? 5
         setSilentMode(energy <= 3)
 
-        // Seed-of-day: find a past reflection quote (not today)
         const today = todayKey()
-        const pastDays = (historyData as Array<{ date: string; evening?: { summary?: string; tomorrow_question?: string } }>)
-          .filter((d) => d.date !== today && d.evening)
+        const pastDays = (historyData as Array<{
+          date: string
+          evening?: { summary?: string; tomorrow_question?: string }
+        }>).filter((d) => d.date !== today && d.evening)
         if (pastDays.length > 0) {
           const pick = pastDays[pastDays.length - 1]
           const quote = pick.evening?.tomorrow_question || pick.evening?.summary
@@ -114,7 +162,6 @@ export default function ChecklistPage() {
           }
         }
 
-        // Letter from yesterday evening
         const letterKey = `aura_letter_${date}`
         const letter = window.localStorage.getItem(letterKey)
         if (letter) setLetterFromMe(letter)
@@ -128,6 +175,16 @@ export default function ChecklistPage() {
         setSilentEmoji(local.silentEmoji ?? null)
         if (validDone.length !== local.done.length) {
           writeLocal(date, { done: validDone, note: local.note, emotions: local.emotions ?? {} })
+        }
+
+        try {
+          const raw = window.localStorage.getItem(middayMoodKey(date))
+          if (raw) {
+            const num = parseInt(raw, 10)
+            if (!isNaN(num)) setMiddayMood(num)
+          }
+        } catch {
+          // ignore
         }
       })
       .catch((e) => {
@@ -147,6 +204,19 @@ export default function ChecklistPage() {
   const doneCount = doneIds.length
   const progressPct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100)
 
+  // First tick → fire-and-forget POST /api/task/first-action (idempotent server-side, dedupe client-side)
+  const trackFirstAction = useCallback(
+    (index: number) => {
+      const stamps = readFirstActionStamps(date)
+      if (stamps[index]) return
+      markFirstActionStamp(date, index)
+      postFirstAction(index, date).catch(() => {
+        // swallow — not critical; server has its own idempotency
+      })
+    },
+    [date],
+  )
+
   const toggleTask = useCallback(
     (index: number) => {
       setDoneIds((prev) => {
@@ -154,7 +224,9 @@ export default function ChecklistPage() {
         const next = wasChecked
           ? prev.filter((i) => i !== index)
           : [...prev, index]
-        // Untick task → also clear its emoji
+        if (!wasChecked) {
+          trackFirstAction(index)
+        }
         if (wasChecked) {
           setEmotions((prevEmo) => {
             const { [index]: _, ...rest } = prevEmo
@@ -167,13 +239,12 @@ export default function ChecklistPage() {
         return next
       })
     },
-    [date, note, emotions],
+    [date, note, emotions, trackFirstAction],
   )
 
   const setTaskEmotion = useCallback(
     (index: number, emotion: PostEmotion) => {
       setEmotions((prev) => {
-        // Toggle: click same emoji again → remove it
         if (prev[index] === emotion) {
           const { [index]: _, ...rest } = prev
           writeLocal(date, { done: doneIds, note, emotions: rest })
@@ -199,12 +270,85 @@ export default function ChecklistPage() {
   const onSilentEmojiPick = useCallback(
     (emoji: PostEmotion) => {
       setSilentEmoji(emoji)
-      // In silent mode, mark all tasks as done
       const allIds = tasks.map((_, i) => i)
       setDoneIds(allIds)
       writeLocal(date, { done: allIds, note, emotions, silentEmoji: emoji })
     },
     [date, note, emotions, tasks],
+  )
+
+  const onMiddayMoodChange = useCallback(
+    (value: number) => {
+      setMiddayMood(value)
+      try {
+        window.localStorage.setItem(middayMoodKey(date), String(value))
+      } catch {
+        // ignore
+      }
+    },
+    [date],
+  )
+
+  const onRetryEasier = useCallback(
+    async (index: number) => {
+      if (retryingIndex !== null) return
+      setRetryingIndex(index)
+      setRetryEncouragement(null)
+      try {
+        const res = await postRetryEasier(index, date)
+        setEntry((prev) => {
+          if (!prev?.morning) return prev
+          const newTasks = [...(prev.morning.tasks ?? [])]
+          newTasks[index] = res.task
+          return { ...prev, morning: { ...prev.morning, tasks: newTasks } }
+        })
+        setDoneIds((prev) => prev.filter((i) => i !== index))
+        setEmotions((prev) => {
+          const { [index]: _, ...rest } = prev
+          return rest
+        })
+        setRetryEncouragement(res.encouragement || 'AURA đã thay bằng phiên bản nhẹ hơn.')
+        setTimeout(() => setRetryEncouragement(null), 4000)
+      } catch (e) {
+        setRetryEncouragement(
+          e instanceof Error ? e.message : 'Không đổi được task — thử lại sau nhé.',
+        )
+        setTimeout(() => setRetryEncouragement(null), 4000)
+      } finally {
+        setRetryingIndex(null)
+      }
+    },
+    [retryingIndex, date],
+  )
+
+  const onFrictionSubmit = useCallback(
+    async (reason: FrictionReason, note: string) => {
+      if (frictionTaskIndex === null) return
+      const idx = frictionTaskIndex
+      try {
+        await postFriction({ task_index: idx, reason, note, date })
+        setEntry((prev) => {
+          if (!prev?.morning) return prev
+          const newTasks = [...(prev.morning.tasks ?? [])]
+          if (newTasks[idx]) {
+            newTasks[idx] = {
+              ...newTasks[idx],
+              friction: {
+                reason,
+                note,
+                logged_at: new Date().toISOString(),
+              },
+            }
+          }
+          return { ...prev, morning: { ...prev.morning, tasks: newTasks } }
+        })
+      } catch {
+        // silently fail — UI optimistic update only matters for next render
+      } finally {
+        setFrictionTaskIndex(null)
+      }
+    },
+    [frictionTaskIndex, date],
   )
 
   const onEndDay = useCallback(() => {
@@ -261,8 +405,8 @@ export default function ChecklistPage() {
 
   const mood = entry.morning.mood_state as MoodState
   const moodLabel = MOOD_LABELS[mood] ?? mood
+  const morningEnergy = entry.morning.energy_level ?? 5
 
-  // Silent tick mode: energy ≤ 3 → simplified UI
   if (silentMode) {
     return (
       <PageShell>
@@ -424,6 +568,12 @@ export default function ChecklistPage() {
         {seedQuote && <SeedOfDay quote={seedQuote} />}
         {letterFromMe && <LetterFromYesterday text={letterFromMe} />}
 
+        <MiddayMoodSlider
+          morningEnergy={morningEnergy}
+          value={middayMood}
+          onChange={onMiddayMoodChange}
+        />
+
         <ProgressCard done={doneCount} total={totalCount} pct={progressPct} />
 
         {totalCount === 0 ? (
@@ -436,15 +586,33 @@ export default function ChecklistPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {tasks.map((task, index) => (
               <TaskRow
-                key={index}
+                key={`${index}-${task.title}`}
                 task={task}
                 index={index}
                 done={doneIds.includes(index)}
                 onToggle={() => toggleTask(index)}
                 emotion={emotions[index] ?? null}
                 onEmotion={(e) => setTaskEmotion(index, e)}
+                onRetryEasier={() => onRetryEasier(index)}
+                onOpenFriction={() => setFrictionTaskIndex(index)}
+                isRetrying={retryingIndex === index}
               />
             ))}
+          </div>
+        )}
+
+        {retryEncouragement && (
+          <div
+            className="glass-card anim-fade-in"
+            style={{
+              padding: '14px 18px',
+              borderLeft: '2px solid var(--mood-color)',
+              fontSize: '0.88rem',
+              color: 'var(--text-primary)',
+              lineHeight: 1.55,
+            }}
+          >
+            {retryEncouragement}
           </div>
         )}
 
@@ -477,6 +645,14 @@ export default function ChecklistPage() {
           </button>
         </div>
       </div>
+
+      {frictionTaskIndex !== null && (
+        <FrictionModal
+          taskTitle={tasks[frictionTaskIndex]?.title ?? ''}
+          onCancel={() => setFrictionTaskIndex(null)}
+          onSubmit={onFrictionSubmit}
+        />
+      )}
     </PageShell>
   )
 }
@@ -569,6 +745,81 @@ function LetterFromYesterday({ text }: { text: string }) {
   )
 }
 
+function MiddayMoodSlider({
+  morningEnergy,
+  value,
+  onChange,
+}: {
+  morningEnergy: number
+  value: number | null
+  onChange: (v: number) => void
+}) {
+  const display = value ?? morningEnergy
+  const delta = value !== null ? value - morningEnergy : null
+
+  let hint = 'Kéo để ghi nhận năng lượng hiện tại.'
+  if (delta !== null) {
+    if (delta >= 2) hint = 'Đang lên 📈 — bạn vừa sạc được năng lượng.'
+    else if (delta <= -2) hint = 'Đang xuống 📉 — có thể cần dừng lại 5 phút.'
+    else hint = 'Ổn định so với sáng nay.'
+  }
+
+  return (
+    <div className="glass-card" style={{ padding: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Midday check — năng lượng ngay bây giờ
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            color: 'var(--mood-color)',
+          }}
+        >
+          {display}/10
+        </span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        step={1}
+        value={display}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        style={{ width: '100%', accentColor: 'var(--mood-color)', cursor: 'pointer' }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: 4,
+          fontSize: '0.7rem',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        <span>Sáng: {morningEnergy}</span>
+        <span>{hint}</span>
+      </div>
+    </div>
+  )
+}
+
 function ProgressCard({ done, total, pct }: { done: number; total: number; pct: number }) {
   return (
     <div className="glass-card" style={{ padding: 24 }}>
@@ -634,6 +885,9 @@ function TaskRow({
   onToggle,
   emotion,
   onEmotion,
+  onRetryEasier,
+  onOpenFriction,
+  isRetrying,
 }: {
   task: Task
   index: number
@@ -641,13 +895,17 @@ function TaskRow({
   onToggle: () => void
   emotion: PostEmotion | null
   onEmotion: (e: PostEmotion) => void
+  onRetryEasier: () => void
+  onOpenFriction: () => void
+  isRetrying: boolean
 }) {
   const [justCompleted, setJustCompleted] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasFriction = !!task.friction
+  const wasReplaced = !!task.replaced_from
 
   function handleToggle() {
     if (!done) {
-      // About to complete → trigger burst
       setJustCompleted(true)
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setJustCompleted(false), 600)
@@ -660,11 +918,21 @@ function TaskRow({
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0,
+        animation: isRetrying ? undefined : 'fadeInUp 0.4s ease',
+        opacity: isRetrying ? 0.5 : 1,
+        transition: 'opacity 0.3s ease',
+      }}
+    >
       <button
         type="button"
         onClick={handleToggle}
         aria-pressed={done}
+        disabled={isRetrying}
         className="glass-card hover-lift"
         style={{
           padding: '18px 20px',
@@ -673,7 +941,7 @@ function TaskRow({
           gap: 14,
           alignItems: 'flex-start',
           textAlign: 'left',
-          cursor: 'pointer',
+          cursor: isRetrying ? 'wait' : 'pointer',
           width: '100%',
           background: 'var(--bg-surface)',
           opacity: done ? 0.72 : 1,
@@ -718,6 +986,12 @@ function TaskRow({
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <Chip>{task.estimated_minutes} phút</Chip>
             {task.difficulty && <Chip>{task.difficulty}</Chip>}
+            {wasReplaced && <Chip tone="soft">Đã thay nhẹ hơn</Chip>}
+            {hasFriction && (
+              <Chip tone="warn">
+                Skip: {FRICTION_OPTIONS.find((o) => o.value === task.friction?.reason)?.label ?? task.friction?.reason}
+              </Chip>
+            )}
             {emotion && (
               <button
                 type="button"
@@ -743,7 +1017,40 @@ function TaskRow({
         </div>
       </button>
 
-      {/* Micro-emotion picker — shows after tick, hides after selection */}
+      {/* Action row — retry easier / skip with reason */}
+      {!done && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            justifyContent: 'flex-end',
+            padding: '8px 6px 0',
+          }}
+        >
+          <ActionMiniButton
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenFriction()
+            }}
+            disabled={isRetrying}
+            title="Ghi nhận lý do skip task"
+          >
+            Bỏ qua
+          </ActionMiniButton>
+          <ActionMiniButton
+            onClick={(e) => {
+              e.stopPropagation()
+              onRetryEasier()
+            }}
+            disabled={isRetrying}
+            emphasis
+            title="Thay bằng task nhẹ hơn"
+          >
+            {isRetrying ? 'Đang đổi…' : 'Task quá sức'}
+          </ActionMiniButton>
+        </div>
+      )}
+
       {done && !emotion && (
         <div
           className="anim-fade-in"
@@ -801,6 +1108,48 @@ function TaskRow({
   )
 }
 
+function ActionMiniButton({
+  children,
+  onClick,
+  emphasis,
+  disabled,
+  title,
+}: {
+  children: React.ReactNode
+  onClick: (e: React.MouseEvent) => void
+  emphasis?: boolean
+  disabled?: boolean
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        fontSize: '0.72rem',
+        letterSpacing: '0.04em',
+        padding: '8px 14px',
+        minHeight: 36,
+        borderRadius: 999,
+        border: emphasis
+          ? '1px solid var(--mood-color)'
+          : '1px solid var(--border-default)',
+        background: emphasis
+          ? 'color-mix(in srgb, var(--mood-color) 14%, transparent)'
+          : 'transparent',
+        color: emphasis ? 'var(--mood-color)' : 'var(--text-tertiary)',
+        cursor: disabled ? 'wait' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
+        transition: 'all 0.2s ease',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 function Checkbox({ done, index, justCompleted }: { done: boolean; index: number; justCompleted?: boolean }) {
   return (
     <span
@@ -846,15 +1195,21 @@ function Checkbox({ done, index, justCompleted }: { done: boolean; index: number
   )
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
+function Chip({ children, tone }: { children: React.ReactNode; tone?: 'warn' | 'soft' }) {
+  const palette =
+    tone === 'warn'
+      ? { color: '#ff9b7a', border: '#ff9b7a' }
+      : tone === 'soft'
+      ? { color: 'var(--mood-color-soft, var(--mood-color))', border: 'var(--border-strong)' }
+      : { color: 'var(--text-tertiary)', border: 'var(--border-default)' }
   return (
     <span
       style={{
         fontSize: '0.7rem',
-        color: 'var(--text-tertiary)',
+        color: palette.color,
         padding: '2px 10px',
         borderRadius: 999,
-        border: '1px solid var(--border-default)',
+        border: `1px solid ${palette.border}`,
         letterSpacing: '0.04em',
       }}
     >
@@ -917,6 +1272,187 @@ function MidDayNote({
         <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
           {savedAt ? 'Đã lưu cục bộ' : 'Tự lưu khi bạn gõ'}
         </span>
+      </div>
+    </div>
+  )
+}
+
+function FrictionModal({
+  taskTitle,
+  onCancel,
+  onSubmit,
+}: {
+  taskTitle: string
+  onCancel: () => void
+  onSubmit: (reason: FrictionReason, note: string) => void
+}) {
+  const [reason, setReason] = useState<FrictionReason | null>(null)
+  const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    },
+    [onCancel],
+  )
+
+  useEffect(() => {
+    document.addEventListener('keydown', onKeyDown)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [onKeyDown])
+
+  async function handleSubmit() {
+    if (!reason || submitting) return
+    setSubmitting(true)
+    await Promise.resolve(onSubmit(reason, note.trim()))
+    setSubmitting(false)
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="friction-title"
+      onClick={onCancel}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        animation: 'fadeIn 0.2s ease',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="glass-card anim-fade-in-scale"
+        style={{
+          maxWidth: 440,
+          width: '100%',
+          padding: 28,
+          background: 'var(--bg-surface)',
+          borderLeft: '2px solid var(--mood-color)',
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Bỏ qua không sao
+        </p>
+        <h2
+          id="friction-title"
+          style={{
+            margin: '6px 0 4px',
+            fontFamily: 'var(--font-heading, Sora, system-ui)',
+            fontSize: '1.15rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}
+        >
+          Điều gì cản bạn hôm nay?
+        </h2>
+        <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+          &ldquo;{taskTitle}&rdquo; — AURA chỉ ghi nhận, không chấm điểm.
+        </p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {FRICTION_OPTIONS.map((opt) => {
+            const active = reason === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setReason(opt.value)}
+                style={{
+                  padding: '10px 16px',
+                  minHeight: 40,
+                  borderRadius: 999,
+                  border: active
+                    ? '1.5px solid var(--mood-color)'
+                    : '1px solid var(--border-default)',
+                  background: active
+                    ? 'color-mix(in srgb, var(--mood-color) 16%, transparent)'
+                    : 'transparent',
+                  color: active ? 'var(--mood-color)' : 'var(--text-secondary)',
+                  fontSize: '0.85rem',
+                  fontWeight: active ? 600 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Ghi chú (tuỳ chọn)…"
+          rows={2}
+          maxLength={200}
+          style={{
+            width: '100%',
+            resize: 'none',
+            fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+            fontSize: '0.9rem',
+            lineHeight: 1.55,
+            padding: '10px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--border-default)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+          }}
+        />
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            justifyContent: 'flex-end',
+            marginTop: 16,
+          }}
+        >
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onCancel}
+            style={{ borderRadius: 10, cursor: 'pointer', padding: '10px 18px', fontSize: '0.85rem' }}
+          >
+            Huỷ
+          </button>
+          <button
+            type="button"
+            className="btn-mood"
+            onClick={handleSubmit}
+            disabled={!reason || submitting}
+            style={{
+              borderRadius: 10,
+              cursor: reason ? 'pointer' : 'not-allowed',
+              padding: '10px 18px',
+              fontSize: '0.85rem',
+              opacity: reason ? 1 : 0.5,
+            }}
+          >
+            {submitting ? 'Đang lưu…' : 'Lưu lý do'}
+          </button>
+        </div>
       </div>
     </div>
   )

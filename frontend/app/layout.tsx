@@ -1,8 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Sora, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import PageTransition from '@/components/ui/PageTransition'
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import { ThemeProvider } from '@/lib/theme-context'
 import { MoodProvider, MoodBody } from '@/lib/mood-context'
 
@@ -25,6 +26,22 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'AURA — AI Life Coach',
   description: 'Nhận diện pattern tâm lý, hành động có chủ đích mỗi ngày.',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/icon-192.svg',
+    apple: '/icon-192.svg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'AURA',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0f',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <PageTransition>{children}</PageTransition>
                 </main>
               </div>
+              <ServiceWorkerRegistrar />
             </MoodBody>
           </MoodProvider>
         </ThemeProvider>

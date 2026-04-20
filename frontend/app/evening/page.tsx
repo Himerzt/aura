@@ -864,24 +864,57 @@ function letterStorageKey(date: string): string {
   return `aura_letter_${d.toISOString().slice(0, 10)}`
 }
 
+function preCommitKey(date: string): string {
+  const d = new Date(date)
+  d.setDate(d.getDate() + 1)
+  return `aura_precommit_${d.toISOString().slice(0, 10)}`
+}
+
+interface PreCommit {
+  when: string
+  what: string
+}
+
 function LetterToTomorrow({ date }: { date: string }) {
-  const [letter, setLetter] = useState('')
+  const [when, setWhen] = useState('')
+  const [what, setWhat] = useState('')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    const existing = window.localStorage.getItem(letterStorageKey(date))
+    const existing = window.localStorage.getItem(preCommitKey(date))
     if (existing) {
-      setLetter(existing)
-      setSaved(true)
+      try {
+        const parsed = JSON.parse(existing) as Partial<PreCommit>
+        setWhen(parsed.when ?? '')
+        setWhat(parsed.what ?? '')
+        if (parsed.when || parsed.what) setSaved(true)
+      } catch {
+        // fallback: legacy free-form letter
+        setWhat(existing)
+        setSaved(true)
+      }
+    } else {
+      const legacy = window.localStorage.getItem(letterStorageKey(date))
+      if (legacy) {
+        setWhat(legacy)
+        setSaved(true)
+      }
     }
   }, [date])
 
+  const canSave = when.trim() && what.trim()
+
   const onSave = useCallback(() => {
-    const text = letter.trim()
-    if (!text) return
-    window.localStorage.setItem(letterStorageKey(date), text)
+    if (!canSave) return
+    const payload: PreCommit = { when: when.trim(), what: what.trim() }
+    window.localStorage.setItem(preCommitKey(date), JSON.stringify(payload))
+    // Keep legacy letter key in sync so checklist's LetterFromYesterday still shows something readable
+    window.localStorage.setItem(
+      letterStorageKey(date),
+      `Ngày mai lúc ${payload.when} tôi sẽ ${payload.what}`,
+    )
     setSaved(true)
-  }, [letter, date])
+  }, [when, what, date, canSave])
 
   return (
     <div
@@ -891,50 +924,86 @@ function LetterToTomorrow({ date }: { date: string }) {
         borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
       }}
     >
-      <SectionLabel>Thư gửi mình ngày mai</SectionLabel>
+      <SectionLabel>Pre-commit cho ngày mai</SectionLabel>
       <p
         style={{
-          margin: '0 0 12px',
+          margin: '0 0 14px',
           fontSize: '0.85rem',
           color: 'var(--text-secondary)',
           lineHeight: 1.55,
         }}
       >
-        Viết 1–2 câu cho chính mình vào sáng mai. Lời nhắn này sẽ hiện lại khi bạn mở checklist.
+        Cấu trúc IF-THEN — khoá ý định trước khi đi ngủ. Sáng mai AURA sẽ nhắc lại khi bạn mở checklist.
       </p>
-      <textarea
-        className="input-underline"
-        value={letter}
-        onChange={(e) => {
-          setLetter(e.target.value)
-          setSaved(false)
-        }}
-        placeholder="Ngày mai, hãy nhớ rằng..."
-        rows={2}
-        maxLength={200}
+
+      <div
         style={{
-          width: '100%',
-          resize: 'none',
-          minHeight: 56,
-          fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
-          fontSize: '0.92rem',
-          lineHeight: 1.55,
-          borderBottom: '1px solid var(--border-default)',
-          background: 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 8,
+          fontSize: '0.95rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.8,
         }}
-      />
+      >
+        <span style={{ color: 'var(--text-tertiary)' }}>Ngày mai lúc</span>
+        <input
+          type="text"
+          value={when}
+          onChange={(e) => {
+            setWhen(e.target.value)
+            setSaved(false)
+          }}
+          placeholder="7h sáng"
+          maxLength={40}
+          style={{
+            flex: '0 1 140px',
+            minWidth: 100,
+            padding: '6px 10px',
+            borderRadius: 8,
+            border: '1px solid var(--border-default)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            fontSize: '0.92rem',
+            fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+          }}
+        />
+        <span style={{ color: 'var(--text-tertiary)' }}>tôi sẽ</span>
+        <input
+          type="text"
+          value={what}
+          onChange={(e) => {
+            setWhat(e.target.value)
+            setSaved(false)
+          }}
+          placeholder="đi bộ 10 phút sau khi pha cà phê"
+          maxLength={160}
+          style={{
+            flex: '1 1 100%',
+            padding: '8px 12px',
+            borderRadius: 8,
+            border: '1px solid var(--border-default)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            fontSize: '0.92rem',
+            fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+          }}
+        />
+      </div>
+
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginTop: 10,
+          marginTop: 14,
         }}
       >
         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-          {letter.length}/200
+          {when.length + what.length}/200
         </span>
-        {saved ? (
+        {saved && canSave ? (
           <span
             style={{
               fontSize: '0.78rem',
@@ -942,23 +1011,23 @@ function LetterToTomorrow({ date }: { date: string }) {
               fontWeight: 500,
             }}
           >
-            Đã lưu ✓
+            Đã khoá ✓
           </span>
         ) : (
           <button
             type="button"
             className="btn-ghost"
             onClick={onSave}
-            disabled={!letter.trim()}
+            disabled={!canSave}
             style={{
               borderRadius: 10,
-              cursor: letter.trim() ? 'pointer' : 'default',
+              cursor: canSave ? 'pointer' : 'default',
               padding: '6px 16px',
               fontSize: '0.8rem',
-              opacity: letter.trim() ? 1 : 0.5,
+              opacity: canSave ? 1 : 0.5,
             }}
           >
-            Lưu lại
+            Khoá IF-THEN
           </button>
         )}
       </div>

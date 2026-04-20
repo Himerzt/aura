@@ -11,11 +11,20 @@ from core.memory import (
     save_morning,
     save_evening,
     get_today_entry,
+    get_today_morning,
     get_history_7_days,
     get_streak,
+    log_friction,
+    track_time_to_first_action,
+    replace_task,
+    get_pattern_radar,
+    get_framework_diversity_7d,
+    get_energy_mood_matrix_7d,
+    VALID_FRICTION_REASONS,
 )
 from core.pipeline import run_morning_pipeline
 from agents.reflection import run_reflection
+from agents.task_generator import run_task_generator
 
 router = APIRouter(prefix="/api", tags=["aura"])
 
@@ -173,6 +182,111 @@ async def streak():
 async def history():
     """Return last 7 days of history entries."""
     return get_history_7_days()
+
+
+# ── Phần 8D: Task friction + retry-easier + pattern radar ──────────────────────
+
+class FrictionRequest(BaseModel):
+    task_index: int
+    reason: str  # tired | distracted | forgot | no_meaning
+    note: str = ""
+    date: Optional[str] = None
+
+
+class FirstActionRequest(BaseModel):
+    task_index: int
+    date: Optional[str] = None
+
+
+class RetryEasierRequest(BaseModel):
+    task_index: int
+    date: Optional[str] = None
+
+
+@router.post("/task/friction")
+async def task_friction(req: FrictionRequest):
+    """Log friction reason for a task (skip/failed chip)."""
+    if req.reason not in VALID_FRICTION_REASONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"reason phải là một trong {sorted(VALID_FRICTION_REASONS)}",
+        )
+    try:
+        task = log_friction(req.task_index, req.reason, req.note, req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return {"success": True, "task": task}
+
+
+@router.post("/task/first-action")
+async def task_first_action(req: FirstActionRequest):
+    """Stamp first-action timestamp on first tick. Idempotent."""
+    try:
+        task = track_time_to_first_action(req.task_index, req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return {"success": True, "task": task}
+
+
+@router.post("/task/retry-easier")
+async def task_retry_easier(req: RetryEasierRequest):
+    """Generate an easier replacement task (energy - 2) and swap it in."""
+    target_date = req.date or date.today().isoformat()
+    morning = get_today_morning() if target_date == date.today().isoformat() else {}
+    if not morning:
+        raise HTTPException(status_code=404, detail="Không tìm thấy morning entry")
+
+    tasks = morning.get("tasks", [])
+    if req.task_index < 0 or req.task_index >= len(tasks):
+        raise HTTPException(status_code=404, detail="task_index ngoài phạm vi")
+
+    original_energy = morning.get("energy_level", 5)
+    new_energy = max(1, original_energy - 2)
+
+    insight = {
+        "primary_pattern": morning.get("pattern", ""),
+        "explanation_for_user": morning.get("explanation", ""),
+        "recommended_framework": morning.get("framework", "behavioral_activation"),
+    }
+    profile = load_profile()
+
+    try:
+        result = await run_task_generator(insight, profile, new_energy)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"AI pipeline lỗi: {str(e)}")
+
+    new_tasks = result.get("tasks", [])
+    if not new_tasks:
+        raise HTTPException(status_code=502, detail="Không tạo được task dễ hơn")
+
+    updated = replace_task(req.task_index, new_tasks[0], target_date)
+    return {
+        "success": True,
+        "task": updated,
+        "new_energy_level": new_energy,
+        "encouragement": result.get("encouragement", ""),
+    }
+
+
+@router.get("/pattern-radar")
+async def pattern_radar(days: int = 7):
+    """Return count of each framework used in last N days."""
+    if days not in (7, 30):
+        raise HTTPException(status_code=400, detail="days phải là 7 hoặc 30")
+    counts = get_pattern_radar(days=days)
+    return {"days": days, "counts": counts}
+
+
+@router.get("/energy-mood-matrix")
+async def energy_mood_matrix():
+    """Return [{date, mood, energy}] for last 7 days (for scatter/line chart)."""
+    return {"data": get_energy_mood_matrix_7d()}
+
+
+@router.get("/framework-diversity")
+async def framework_diversity():
+    """Shorthand for pattern-radar with 7-day window."""
+    return {"counts": get_framework_diversity_7d()}
 
 
 @router.get("/weekly-insight")
