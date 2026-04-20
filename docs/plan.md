@@ -17,7 +17,7 @@
 - [x] Phần 5.6 — Animations + Contrast + Button Prominence ✓ (2026-04-13)
 - [x] Phần 6 — Frontend: Onboarding + Morning
 - [x] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions) ✓ (2026-04-16)
-- [ ] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
+- [x] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
 - [ ] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal
 
 ---
@@ -439,8 +439,8 @@ Thêm CORS middleware cho localhost:3000.
 | A | Streak Shield System (Backend) | [x] ✓ |
 | B | Animations & Visual Feedback (Frontend) | [x] ✓ |
 | C | Responsive + Error States (Frontend) | [x] ✓ |
-| D | Medium Extensions: Backend | [ ] |
-| E | Medium Extensions: Frontend | [ ] |
+| D | Medium Extensions: Backend | [x] ✓ |
+| E | Medium Extensions: Frontend | [x] ✓ |
 
 **Việc cần làm:**
 
@@ -467,53 +467,53 @@ Thêm CORS middleware cho localhost:3000.
 - Loading skeleton cho tất cả data-fetching states
 
 **Success Criteria:**
-- [ ] MoodOrb glow animation chạy mượt
-- [ ] Task completion có visual feedback rõ ràng
-- [ ] App usable trên 375px (iPhone SE)
-- [ ] Streak shield logic đúng
-- [ ] Error state hiển thị khi backend down
-- [ ] Không có console error trên Chrome DevTools
+- [x] MoodOrb glow animation chạy mượt
+- [x] Task completion có visual feedback rõ ràng
+- [x] App usable trên 375px (iPhone SE)
+- [x] Streak shield logic đúng
+- [x] Error state hiển thị khi backend down
+- [x] Không có console error trên Chrome DevTools
 
 ### Phần 8 — Mở Rộng (Medium)
 
 > Logic mới, cần backend/data processing hoặc re-call agent, nhưng không cần agent mới. Fit vào scope Polish.
 
 **Backend — bổ sung vào `core/memory.py`:**
-- [ ] `log_friction(task_id, reason)` — preset chips khi user skip: `mệt / bị phân tâm / quên / không thấy ý nghĩa`. Lưu vào `history[date].morning.tasks[i].friction`.
-- [ ] `track_time_to_first_action(task_id)` — từ lúc task tạo → tick đầu tiên. Lưu `first_action_delay_minutes`.
-- [ ] `get_framework_diversity_7d()` — trả về dict count framework 7 ngày.
-- [ ] `get_energy_mood_matrix_7d()` — trả về array `[{date, mood, energy}]` cho chart.
+- [x] `log_friction(task_id, reason)` — preset chips khi user skip: `mệt / bị phân tâm / quên / không thấy ý nghĩa`. Lưu vào `history[date].morning.tasks[i].friction`.
+- [x] `track_time_to_first_action(task_id)` — từ lúc task tạo → tick đầu tiên. Lưu `first_action_delay_minutes`.
+- [x] `get_framework_diversity_7d()` — trả về dict count framework 7 ngày.
+- [x] `get_energy_mood_matrix_7d()` — trả về array `[{date, mood, energy}]` cho chart.
 
 **Backend — bổ sung endpoint:**
-- [ ] `POST /api/task/retry-easier` — nhận `task_id`, gọi lại Agent 3 với `energy_level - 2`, thay thế task cũ trong `history.json`.
-- [ ] `POST /api/task/friction` — lưu friction log.
-- [ ] `GET /api/pattern-radar` — trả về count 8 framework trong 7/30 ngày.
+- [x] `POST /api/task/retry-easier` — nhận `task_id`, gọi lại Agent 3 với `energy_level - 2`, thay thế task cũ trong `history.json`.
+- [x] `POST /api/task/friction` — lưu friction log.
+- [x] `GET /api/pattern-radar` — trả về count 8 framework trong 7/30 ngày.
 
 **Checklist page (Medium):**
-- [ ] **"Task quá sức" escape hatch** — nút nhỏ cạnh task → call `/api/task/retry-easier`, animation swap task mới mượt.
-- [ ] **Friction log modal khi skip** — preset chips, optional free text.
-- [ ] **Time-to-first-action indicator** — nếu delay > 3h nhiều ngày liên tục, dashboard hiện insight "có vẻ bạn đang phân tích quá nhiều".
-- [ ] **Implementation intention countdown** — nếu task có mốc giờ trigger, hiện countdown live.
-- [ ] **Midday mood re-check slider** — 1 slider ở đầu checklist, so với morning mood.
+- [x] **"Task quá sức" escape hatch** — nút nhỏ cạnh task → call `/api/task/retry-easier`, animation swap task mới mượt.
+- [x] **Friction log modal khi skip** — preset chips, optional free text.
+- [x] **Time-to-first-action indicator** — nếu delay > 3h nhiều ngày liên tục, dashboard hiện insight "có vẻ bạn đang phân tích quá nhiều".
+- [ ] ~~**Implementation intention countdown**~~ — *Skip:* task hiện chưa có structured trigger time, free-text "khi…" trong `implementation` không parse được giờ. Để hậu kỳ.
+- [x] **Midday mood re-check slider** — 1 slider ở đầu checklist, so với morning mood.
 
 **Evening page (Medium):**
-- [ ] **Tomorrow pre-commit** — sau Agent 4 result, ô input "Ngày mai lúc ___ tôi sẽ ___". Lock IF-THEN, sáng mai hiện lại trong morning form như mặc định.
+- [x] **Tomorrow pre-commit** — sau Agent 4 result, ô input "Ngày mai lúc ___ tôi sẽ ___". Lock IF-THEN, sáng mai hiện lại trong morning form như mặc định.
 
 **Dashboard page (Medium):**
-- [ ] **Pattern radar chart** — spider chart 8 framework, count 30 ngày gần nhất.
-- [ ] **Framework diversity indicator** — nếu 1 framework lặp > 5 ngày liên tục, hiển thị cảnh báo nhẹ "có pattern lặp".
-- [ ] **Energy × mood correlation chart** — scatter 7 ngày, trục X = mood, Y = energy.
+- [x] **Pattern radar chart** — spider chart 8 framework, count 30 ngày gần nhất.
+- [x] **Framework diversity indicator** — nếu 1 framework lặp > 5 ngày liên tục, hiển thị cảnh báo nhẹ "có pattern lặp".
+- [x] **Energy × mood correlation chart** — scatter 7 ngày, trục X = mood, Y = energy.
 
 **UX platform (Medium):**
-- [ ] **Reminder neo vào daily_anchor** — thay vì push giờ tùy ý, neo vào thói quen onboarding ("sau khi pha cà phê sáng"). Dùng local notification nếu PWA.
-- [ ] **PWA installable offline-first** — manifest.json + service worker, checklist chạy offline, sync khi online.
-- [ ] **Gentle re-entry flow** — nếu miss ≥ 3 ngày, skip morning form, chỉ hỏi 1 câu: "không sao, hôm nay bạn muốn bắt đầu bằng điều gì nhỏ nhất?".
+- [ ] ~~**Reminder neo vào daily_anchor**~~ — *Skip:* cần Notification API + user gesture permission flow. Để tách milestone PWA+ riêng.
+- [x] **PWA installable offline-first** — manifest.json + service worker, checklist chạy offline, sync khi online.
+- [x] **Gentle re-entry flow** — nếu miss ≥ 3 ngày, skip morning form, chỉ hỏi 1 câu: "không sao, hôm nay bạn muốn bắt đầu bằng điều gì nhỏ nhất?".
 
 **Success Criteria:**
-- [ ] 3 endpoint mới có trong `/docs`
-- [ ] Pattern radar render đúng với mock history 30 ngày
-- [ ] PWA pass Lighthouse audit (installable)
-- [ ] Retry-easier flow không mất data task cũ (lưu `replaced_from` reference)
+- [x] 3 endpoint mới có trong `/docs`
+- [x] Pattern radar render đúng với mock history 30 ngày
+- [x] PWA pass Lighthouse audit (installable)
+- [x] Retry-easier flow không mất data task cũ (lưu `replaced_from` reference)
 
 ---
 
