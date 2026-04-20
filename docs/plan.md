@@ -189,12 +189,12 @@ Thêm CORS middleware cho localhost:3000.
 - `StreakDisplay.tsx` — hiển thị streak + shield system
 - `SupportCard.tsx` — crisis mode card
 
-**Success Criteria:**
-- [ ] `localhost/` load được, dark background đúng màu
-- [ ] MoodOrb render với màu amber (stable state)
-- [ ] TaskCard render với mock data, tick được
-- [ ] StreakDisplay render với số 0
-- [ ] Không có lỗi TypeScript
+**Success Criteria:** *(Superseded by 5.5/5.6 — đã redesign toàn bộ UI)*
+- [x] `localhost/` load được, dark background đúng màu
+- [x] MoodOrb render với màu amber (stable state)
+- [x] TaskCard render với mock data, tick được
+- [x] StreakDisplay render với số 0
+- [x] Không có lỗi TypeScript
 
 ---
 

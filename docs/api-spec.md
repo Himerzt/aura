@@ -164,9 +164,8 @@ GET /api/streak
 Response:
 {
   "current_streak": 5,
-  "shield_count": 1,
-  "longest_streak": 12,
-  "last_check_in": "YYYY-MM-DD"
+  "today_completed": true,
+  "shield_count": 1
 }
 ```
 
@@ -176,20 +175,15 @@ Response:
 
 ```
 GET /api/history
-Response:
-{
-  "entries": [
-    {
-      "date": "YYYY-MM-DD",
-      "mood_state": "stable",
-      "energy_level": 6,
-      "tasks_total": 2,
-      "tasks_completed": 2,
-      "framework": "implementation_intention"
-    }
-  ],
-  "total_days": 7
-}
+Response: (array — raw entries với đầy đủ morning/evening data)
+[
+  {
+    "date": "YYYY-MM-DD",
+    "morning": { ...full morning entry },
+    "evening": { ...full evening entry | absent },
+    "streak_day": 3
+  }
+]
 ```
 
 ---
@@ -212,6 +206,140 @@ Response (chưa đủ 7 ngày):
 {
   "available": false,
   "days_remaining": 4
+}
+```
+
+---
+
+### Update Profile
+
+```
+PUT /api/profile
+Content-Type: application/json
+
+Body: (same as POST /api/onboarding)
+
+Response 200:
+{
+  "success": true,
+  "message": "Profile đã được cập nhật"
+}
+```
+
+---
+
+### Task Friction Log
+
+```
+POST /api/task/friction
+Content-Type: application/json
+
+Body:
+{
+  "task_index": 0,
+  "reason": "tired | distracted | forgot | no_meaning",
+  "note": "string (optional)",
+  "date": "YYYY-MM-DD (optional, default today)"
+}
+
+Response 200:
+{
+  "success": true,
+  "task": { ...updated task object }
+}
+```
+
+---
+
+### Task First Action
+
+```
+POST /api/task/first-action
+Content-Type: application/json
+
+Body:
+{
+  "task_index": 0,
+  "date": "YYYY-MM-DD (optional, default today)"
+}
+
+Response 200:
+{
+  "success": true,
+  "task": { ...updated task object with first_action_at }
+}
+```
+
+---
+
+### Task Retry Easier
+
+```
+POST /api/task/retry-easier
+Content-Type: application/json
+
+Body:
+{
+  "task_index": 0,
+  "date": "YYYY-MM-DD (optional, default today)"
+}
+
+Response 200:
+{
+  "success": true,
+  "task": { ...new easier task },
+  "new_energy_level": 3,
+  "encouragement": "string (tiếng Việt)"
+}
+```
+
+---
+
+### Pattern Radar
+
+```
+GET /api/pattern-radar?days=7
+Query params: days = 7 | 30
+
+Response 200:
+{
+  "days": 7,
+  "counts": {
+    "behavioral_activation": 2,
+    "implementation_intention": 3,
+    ...
+  }
+}
+```
+
+---
+
+### Energy-Mood Matrix
+
+```
+GET /api/energy-mood-matrix
+
+Response 200:
+{
+  "data": [
+    { "date": "YYYY-MM-DD", "mood": "stable", "energy": 6 }
+  ]
+}
+```
+
+---
+
+### Framework Diversity
+
+```
+GET /api/framework-diversity
+
+Response 200:
+{
+  "counts": {
+    "behavioral_activation": 2,
+    ...
+  }
 }
 ```
 

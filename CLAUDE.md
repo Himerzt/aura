@@ -22,7 +22,7 @@ AURA là AI life coach cá nhân hóa cho người 20–35 tuổi đang stuck, b
 |-------|-----------|---------|
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS | port 3000 |
 | Backend | FastAPI (Python 3.12) | port 8000 |
-| AI Engine | Google Gemini 2.5 Flash | via `google-genai` SDK |
+| AI Engine | Google Gemini 3.1 Flash Lite (preview) | via `google-genai` SDK |
 | Database | SQLite với WAL mode | stdlib `sqlite3`, tự init khi start |
 | Container | Docker Compose (backend + frontend) | 1 lệnh khởi động |
 | Reverse Proxy | Nginx | user truy cập 1 port duy nhất: localhost:80 |
@@ -101,7 +101,19 @@ Cập nhật history.json
       "pattern": "string",
       "framework": "string",
       "explanation": "string (VI)",
-      "tasks": [{"title": "", "implementation": "", "completed": false}]
+      "tasks": [
+        {
+          "title": "",
+          "implementation": "",
+          "completed": false,
+          "post_emotion": "relieved | neutral | exhausted | null",
+          "friction": "tired | distracted | forgot | no_meaning | null",
+          "first_action_at": "ISO datetime | null",
+          "first_action_delay_minutes": 0,
+          "replaced_from": "string (original task title) | null",
+          "created_at": "ISO datetime"
+        }
+      ]
     },
     "evening": {
       "user_input": "string",
@@ -153,13 +165,27 @@ Nếu past_attempts có pattern bỏ cuộc với 1 loại task: tránh lặp l�
 AURA_NEW/
 ├── CLAUDE.md                     ← file này
 ├── .env                          ← GEMINI_API_KEY (không commit)
+├── .env.example
 ├── .gitignore
+├── .gitattributes
+├── LICENSE
+├── README.md
+├── AURA_HUONG_DAN_TOAN_BO.md
 ├── docker-compose.yml
 ├── nginx/
 │   └── nginx.conf
+├── scripts/
+│   └── test-part6.sh
 │
 ├── .claude/
 │   ├── settings.json             ← Claude Code settings
+│   ├── agents/                   ← sub-agent definitions
+│   │   ├── agent-tester.md
+│   │   ├── debug-helper.md
+│   │   ├── project-auditor.md
+│   │   ├── prompt-engineer.md
+│   │   ├── pr-reviewer.md
+│   │   └── ui-builder.md
 │   └── commands/                 ← slash commands tái sử dụng
 │       ├── start-session.md      ← /start-session
 │       ├── test-agent.md         ← /test-agent
@@ -169,51 +195,93 @@ AURA_NEW/
 ├── docs/
 │   ├── plan.md                   ← kế hoạch 8 phần
 │   ├── design-system.md          ← design tokens, component spec
-│   └── api-spec.md               ← endpoint documentation
+│   ├── api-spec.md               ← endpoint documentation
+│   └── test-plan-phan8-D-E.md
 │
 ├── backend/
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   ├── main.py
 │   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── _gemini.py            ← shared Gemini client helper
 │   │   ├── wellness_check.py
 │   │   ├── psychology_insight.py
 │   │   ├── task_generator.py
 │   │   └── reflection.py
 │   ├── core/
+│   │   ├── __init__.py
 │   │   ├── memory.py
 │   │   ├── prompts.py
 │   │   ├── pipeline.py
 │   │   └── database.py
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   └── api.py                ← all /api/* routes
+│   ├── tests/
+│   │   └── test_streak_shield.py
 │   └── data/
 │       ├── profile.json
-│       └── history.json
+│       ├── history.json
+│       └── aura.db               ← SQLite (auto-generated, gitignored)
 │
 └── frontend/
     ├── Dockerfile
     ├── package.json
+    ├── package-lock.json
     ├── tailwind.config.ts
+    ├── postcss.config.js
+    ├── tsconfig.json
+    ├── next.config.ts
+    ├── next-env.d.ts
+    ├── public/
+    │   ├── manifest.webmanifest   ← PWA manifest
+    │   ├── sw.js                  ← Service Worker
+    │   ├── icon-192.svg
+    │   └── icon-512.svg
     ├── app/
     │   ├── layout.tsx
     │   ├── page.tsx
+    │   ├── globals.css
+    │   ├── api/[...path]/         ← Next.js API proxy route
     │   ├── onboarding/page.tsx
     │   ├── morning/page.tsx
     │   ├── checklist/page.tsx
     │   ├── evening/page.tsx
     │   └── dashboard/page.tsx
     ├── components/
+    │   ├── Navigation.tsx
+    │   ├── ServiceWorkerRegistrar.tsx
     │   ├── ui/                   ← reusable primitives
+    │   │   ├── Badge.tsx
+    │   │   ├── Button.tsx
+    │   │   ├── Card.tsx
+    │   │   ├── ErrorCard.tsx
+    │   │   ├── Input.tsx
+    │   │   ├── LoadingSpinner.tsx
+    │   │   ├── PageTransition.tsx
+    │   │   └── Skeleton.tsx
     │   └── aura/                 ← domain-specific components
+    │       ├── EnergyBar.tsx
+    │       ├── FrameworkTag.tsx
+    │       ├── InsightCard.tsx
+    │       ├── MilestoneToast.tsx
+    │       ├── MoodOrb.tsx
+    │       ├── StreakDisplay.tsx
+    │       ├── SupportCard.tsx
+    │       └── TaskCard.tsx
     └── lib/
         ├── api.ts
-        └── types.ts
+        ├── types.ts
+        ├── mood-context.tsx
+        └── theme-context.tsx
 ```
 
 ---
 
 ## 8. Coding Standards
 
-- Mỗi file Python tối đa 300 dòng — tách file nếu vượt
+- Mỗi file Python nên dưới 300 dòng. Nếu vượt 10-15% và tách file sẽ gây phức tạp import → chấp nhận, note lý do ở đầu file.
 - Tất cả agent output phải là valid JSON — không có prose
 - Text hiển thị cho user: **tiếng Việt**
 - Code, comments, variable names: **tiếng Anh**
