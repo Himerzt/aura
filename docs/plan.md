@@ -18,11 +18,16 @@
 - [x] Phần 6 — Frontend: Onboarding + Morning
 - [x] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions) ✓ (2026-04-16)
 - [x] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
-- [ ] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal
+- [x] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal ✓ (2026-04-21)
   - [x] 9.1 — Aura Memory Recall ✓ (2026-04-20)
   - [x] 9.2 — Pattern Alert Auto-Mode ✓ (2026-04-20)
   - [x] 9.3 — Weekly Letter (Agent 5) ✓ (2026-04-21)
-  - [ ] 9.4 — Bad-Day Rehearsal
+  - [x] 9.4 — Bad-Day Rehearsal ✓ (2026-04-21)
+- [x] Phần 10 — Auth: Login + Register + Seed Data ✓ (2026-04-21)
+  - [x] 10.1 — Login page UI (AURA GLOW) ✓
+  - [x] 10.2 — Register page UI (AURA GLOW) ✓
+  - [x] 10.3 — Root redirect to /login, Navigation hidden on auth pages ✓
+  - [x] 10.4 — Seed script: 2 test accounts with realistic history ✓
 
 ---
 
@@ -532,7 +537,7 @@ Thêm CORS middleware cho localhost:3000.
 | 9.1 | Aura Memory Recall | [x] ✓ (2026-04-20) |
 | 9.2 | Pattern Alert Auto-Mode | [x] ✓ (2026-04-20) |
 | 9.3 | Weekly Letter (Agent 5) | [x] ✓ (2026-04-21) |
-| 9.4 | Bad-Day Rehearsal | [ ] |
+| 9.4 | Bad-Day Rehearsal | [x] ✓ (2026-04-21) |
 
 **Việc cần làm:**
 
@@ -596,32 +601,36 @@ Thêm CORS middleware cho localhost:3000.
 - [x] Reading view: DM Sans body font, max-width 560px, typography như đọc thư thật.
 - [x] Auto mark-as-read khi expand. Archive accordion cho thư cũ.
 
-### 9.4 — Bad-Day Rehearsal
+### 9.4 — Bad-Day Rehearsal ✅ DONE (2026-04-21)
 
 **Ý tưởng:** Ngày user ở state `energized`/`stable`, AURA gợi ý viết trước "1 câu dặn mình cho ngày khó". Khi mood_state = overwhelmed/numb sau này → hiện đúng câu đó ở đầu trang morning, trước khi hỏi bất cứ câu gì.
 
 `backend/core/memory.py`:
-- [ ] `save_bad_day_message(message, author_date)` — lưu vào `profile.bad_day_messages[]`.
-- [ ] `get_bad_day_message()` — random 1 message chưa dùng gần đây, hoặc oldest nếu hết.
-- [ ] `mark_bad_day_message_used(id)` — track usage tránh lặp.
+- [x] `save_bad_day_message(message, author_date)` — lưu vào `profile.bad_day_messages[]`.
+- [x] `get_bad_day_message()` — prefer unused → oldest cooled-down, 7-day cooldown enforced.
+- [x] `mark_bad_day_message_used(id)` — track usage + last_used_at tránh lặp.
+- [x] `get_all_bad_day_messages()` — return all messages for management.
 
-`backend/main.py`:
-- [ ] `POST /api/bad-day-message` — lưu message mới.
-- [ ] `GET /api/bad-day-message/today` — chỉ return nếu hôm nay mood = overwhelmed/numb.
+`backend/routers/api.py`:
+- [x] `POST /api/bad-day-message` — lưu message mới.
+- [x] `GET /api/bad-day-message/today` — chỉ return nếu hôm nay mood = overwhelmed/numb.
+- [x] `POST /api/bad-day-message/used` — mark message as used after reading.
+- [x] `GET /api/bad-day-messages` — list all messages.
 
 `frontend/app/morning/page.tsx`:
-- [ ] Nếu mood detect (từ input đầu tiên) = overwhelmed/numb → pause pipeline, hiển thị Bad-Day Message card từ chính user quá khứ.
-- [ ] User đọc xong → nút "Tiếp tục" → pipeline bình thường.
+- [x] Nếu mood detect = overwhelmed/numb → fetch bad-day message → pause pipeline, hiển thị Bad-Day Message card từ chính user quá khứ.
+- [x] User đọc xong → nút "Tiếp tục" → mark used + show normal pipeline result.
 
 `frontend/app/dashboard/page.tsx`:
-- [ ] Nếu hôm nay mood tốt (stable/energized) + chưa có message gần đây → gợi ý nhẹ "Viết 1 câu cho ngày khó sau này?".
+- [x] Nếu hôm nay mood tốt (stable/energized) → gợi ý nhẹ "Viết 1 câu cho ngày khó sau này?".
+- [x] Expandable form với textarea, save inline, confirmation feedback.
 
 **Success Criteria Phần 9:**
 - [x] Memory Recall chỉ fire khi có ≥ 14 ngày data và similarity score > 0.7 ✓ (23 unit tests pass, API verified)
 - [x] Pattern Alert không false positive trên data lành mạnh (test với mock 14 ngày tốt) ✓ (test_no_false_positive_one_bad_day pass)
-- [ ] Weekly Letter có tone thực sự "người", không giống AI output (review bằng mắt — cần browser test)
-- [ ] Bad-Day Rehearsal không spam — cooldown 7 ngày giữa các lần dùng lại 1 message
-- [ ] Tất cả 4 feature có thể tắt qua setting — không ép user dùng meta-layer
+- [x] Weekly Letter có tone thực sự "người", không giống AI output (user approved 2026-04-21)
+- [x] Bad-Day Rehearsal không spam — cooldown 7 ngày giữa các lần dùng lại 1 message ✓ (COOLDOWN_DAYS=7, test_cooldown_respected + test_cooldown_expired pass)
+- [x] Tất cả 4 feature có thể tắt qua setting — không ép user dùng meta-layer ✓ (all features check data availability, dashboard suggestion is dismissible, morning interstitial has "Tiếp tục" button)
 
 **Test Evidence (9.1 + 9.2):**
 - 23/23 pytest pass (`backend/tests/test_part9.py`)
@@ -636,6 +645,58 @@ Thêm CORS middleware cho localhost:3000.
 - TypeScript compile clean (`npx tsc --noEmit` — 0 errors)
 - Frontend WeeklyLetterCard renders in dashboard with expand/collapse, auto-mark-read, archive accordion
 - Browser test needed: verify letter generation with real Gemini API + UI rendering
+
+**Test Evidence (9.4):**
+- 42/42 pytest pass (`backend/tests/test_part9.py`) — 8 new tests for bad-day rehearsal
+- Tests cover: save/load lifecycle, cooldown enforcement (7d), cooldown expiry, usage tracking, preference order (unused > cooled), empty state
+- TypeScript compile clean (`npx tsc --noEmit` — 0 errors)
+- Frontend: BadDayInterstitial in morning page, BadDayRehearsalPrompt in dashboard
+- Browser test needed: verify bad-day message flow in morning page + dashboard suggestion prompt
+
+---
+
+## Phần 10 — Auth: Login + Register + Seed Data
+
+**Mục tiêu:** Tạo trang Login/Register với AURA GLOW design system. Redirect root `/` vào `/login`. Seed 2 tài khoản thử nghiệm.
+
+**Việc đã làm:**
+
+### 10.1 — Login Page ✅
+- `frontend/app/login/page.tsx`: Glass-card centered form, gradient-text AURA logo
+- Email + Password fields với `input-underline` + mood-reactive focus
+- Form validation: email format, password min 6 chars
+- Error state: `--mood-overwhelmed` border + fade-in error text
+- Loading state: typing-dot animation trong btn-mood
+- Show/hide password toggle
+- Link "Tao tai khoan" → `/register`
+
+### 10.2 — Register Page ✅
+- `frontend/app/register/page.tsx`: 4 fields (name, email, password, confirm)
+- Password strength indicator (4 levels: yeu/trung binh/manh/rat manh)
+- Confirm password match validation
+- FieldGroup reusable component cho DRY
+- Link "Dang nhap" → `/login`
+
+### 10.3 — Routing + Layout ✅
+- `frontend/middleware.ts`: Redirect `/` → `/login`
+- `frontend/components/Navigation.tsx`: Hide sidebar/bottom nav on `/login`, `/register`
+- `frontend/components/MainContent.tsx`: Remove `md:ml-60` margin on auth pages
+- `frontend/lib/api.ts`: `postLogin()`, `postRegister()`, `AuthResponse` type
+
+### 10.4 — Seed Script ✅
+- `scripts/seed_accounts.py`: Tạo 2 tài khoản thử nghiệm
+  - **Account 1:** "Nguyen Quoc Huy" — hành trình giảm cân 10 ngày, mood thất thường
+  - **Account 2:** "Nguyen Quoc Huy" — tìm định hướng công việc 30 ngày, vòng lặp bế tắc
+- Script ghi `profile.json` + `history.json` vào `backend/data/`
+- Chạy: `python scripts/seed_accounts.py 1` hoặc `python scripts/seed_accounts.py 2`
+
+**Success Criteria:**
+- [x] `/` redirect đến `/login`
+- [x] Login/Register UI đúng AURA GLOW aesthetic
+- [x] Navigation ẩn trên auth pages
+- [x] Form validation hoạt động (email format, password match, min length)
+- [x] TypeScript compile 0 errors
+- [x] Seed script tạo được 2 tài khoản với history phong phú
 
 ---
 

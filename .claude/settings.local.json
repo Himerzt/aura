@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(npx tsc *)",
+      "Read(//c/Users/ADMIN/AppData/Local/Microsoft/WindowsApps/**)",
+      "Bash(ls /c/Python3*/python.exe)",
+      "Read(//c/Users/ADMIN/**)"
     ]
   }
 }

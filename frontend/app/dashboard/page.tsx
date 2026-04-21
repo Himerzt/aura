@@ -14,6 +14,8 @@ import {
   getPatternAlert,
   getWeeklyLetter,
   markWeeklyLetterRead,
+  getBadDayMessages,
+  postBadDayMessage,
   type WeeklyInsightResponse,
   type PatternRadarResponse,
   type EnergyMoodPoint,
@@ -21,6 +23,7 @@ import {
   type PatternAlertResponse,
   type WeeklyLetterResponse,
   type WeeklyLetterArchiveItem,
+  type BadDayMessageEntry,
 } from '@/lib/api'
 import type { Framework } from '@/lib/types'
 import { useMood } from '@/lib/mood-context'
@@ -76,6 +79,8 @@ export default function DashboardPage() {
   const [memoryRecall, setMemoryRecall] = useState<MemoryRecallResponse | null>(null)
   const [patternAlertData, setPatternAlertData] = useState<PatternAlertResponse | null>(null)
   const [weeklyLetter, setWeeklyLetter] = useState<WeeklyLetterResponse | null>(null)
+  const [badDayMessages, setBadDayMessages] = useState<BadDayMessageEntry[]>([])
+  const [badDaySaved, setBadDaySaved] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -93,8 +98,9 @@ export default function DashboardPage() {
       getMemoryRecall().catch(() => null),
       getPatternAlert().catch(() => null),
       getWeeklyLetter().catch(() => null),
+      getBadDayMessages().catch(() => ({ messages: [] as BadDayMessageEntry[] })),
     ])
-      .then(([prof, str, hist, tod, wi, radarRes, emRes, mrRes, paRes, wlRes]) => {
+      .then(([prof, str, hist, tod, wi, radarRes, emRes, mrRes, paRes, wlRes, bdmRes]) => {
         if (cancelled) return
         setProfile(prof)
         setStreak(str)
@@ -106,6 +112,7 @@ export default function DashboardPage() {
         setMemoryRecall(mrRes)
         setPatternAlertData(paRes)
         setWeeklyLetter(wlRes)
+        setBadDayMessages(bdmRes?.messages ?? [])
         if (tod?.morning?.mood_state) {
           setMood(tod.morning.mood_state as MoodState)
         }
@@ -242,6 +249,21 @@ export default function DashboardPage() {
           streak={streak?.current_streak ?? 0}
           name={profile?.name || 'AURA User'}
         />
+
+        {/* ── Bad-Day Rehearsal suggestion (9.4) ── */}
+        {(todayMood === 'stable' || todayMood === 'energized') && !badDaySaved && (
+          <BadDayRehearsalPrompt
+            existingCount={badDayMessages.length}
+            onSave={(msg) => {
+              postBadDayMessage(msg)
+                .then(() => {
+                  setBadDaySaved(true)
+                  setBadDayMessages((prev) => [...prev, { id: prev.length, message: msg, author_date: new Date().toISOString().slice(0, 10), last_used_at: null, use_count: 0 }])
+                })
+                .catch(() => {})
+            }}
+          />
+        )}
 
         {/* ── CTA Buttons (STT 21) ── */}
         <CTAButtons
@@ -1668,6 +1690,127 @@ function ArchiveLetterItem({ item }: { item: WeeklyLetterArchiveItem }) {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Bad-Day Rehearsal prompt (9.4) ────────────────────────────
+
+function BadDayRehearsalPrompt({
+  existingCount,
+  onSave,
+}: {
+  existingCount: number
+  onSave: (message: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  if (saved) {
+    return (
+      <div
+        className="glass-card anim-fade-in"
+        style={{
+          padding: 20,
+          borderLeft: '2px solid var(--mood-color)',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ margin: 0, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+          Đã lưu. Khi nào bạn cần, AURA sẽ nhắc lại cho bạn.
+        </p>
+      </div>
+    )
+  }
+
+  if (!open) {
+    return (
+      <div
+        className="glass-card anim-fade-in"
+        style={{
+          padding: 20,
+          borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+        }}
+      >
+        <SectionLabel>Dặn mình cho ngày khó</SectionLabel>
+        <p
+          style={{
+            margin: '0 0 12px',
+            fontSize: '0.88rem',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.6,
+          }}
+        >
+          Hôm nay bạn đang ổn — viết 1 câu cho chính mình vào ngày khó sau này?
+          {existingCount > 0 && (
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem' }}>
+              {' '}(đã có {existingCount} câu)
+            </span>
+          )}
+        </p>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => setOpen(true)}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem' }}
+        >
+          Viết ngay
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="glass-card anim-fade-in-up"
+      style={{
+        padding: 24,
+        borderLeft: '2px solid var(--mood-color)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      <SectionLabel>Viết cho ngày khó</SectionLabel>
+      <textarea
+        className="input-underline"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ví dụ: Ngày nào cũng qua. Hãy nhớ rằng bạn đã từng vượt qua những ngày tệ hơn thế này."
+        rows={3}
+        style={{
+          resize: 'vertical',
+          minHeight: 72,
+          fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
+          fontSize: '0.9rem',
+          lineHeight: 1.6,
+        }}
+      />
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => setOpen(false)}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 16px', fontSize: '0.78rem' }}
+        >
+          Huỷ
+        </button>
+        <button
+          type="button"
+          className="btn-mood"
+          disabled={!text.trim()}
+          onClick={() => {
+            if (text.trim()) {
+              onSave(text.trim())
+              setSaved(true)
+            }
+          }}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem' }}
+        >
+          Lưu
+        </button>
+      </div>
     </div>
   )
 }

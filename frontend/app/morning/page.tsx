@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import MoodOrb from '@/components/aura/MoodOrb'
 import { useMood } from '@/lib/mood-context'
 import { InlineError } from '@/components/ui/ErrorCard'
-import { postMorning, getProfile, getHistory } from '@/lib/api'
+import { postMorning, getProfile, getHistory, getBadDayMessageToday, markBadDayMessageUsed } from '@/lib/api'
+import type { BadDayMessageEntry } from '@/lib/api'
 import type { DayEntry, MorningResult, Task } from '@/lib/types'
 
 const MOOD_LABELS: Record<string, string> = {
@@ -83,6 +84,8 @@ export default function MorningPage() {
   const [preCommit, setPreCommit] = useState<PreCommit | null>(null)
   const [missedDays, setMissedDays] = useState<number>(0)
   const [gentleMode, setGentleMode] = useState(false)
+  const [badDayMsg, setBadDayMsg] = useState<BadDayMessageEntry | null>(null)
+  const [badDayDismissed, setBadDayDismissed] = useState(false)
 
   // Fetch profile — if not onboarded, redirect
   useEffect(() => {
@@ -135,6 +138,16 @@ export default function MorningPage() {
       setResult(res)
       if (res.type === 'morning' && res.wellness?.mood_state) {
         setMood(res.wellness.mood_state)
+        // Fetch bad-day message if mood is overwhelmed/numb
+        if (res.wellness.mood_state === 'overwhelmed' || res.wellness.mood_state === 'numb') {
+          getBadDayMessageToday()
+            .then((bdm) => {
+              if (bdm.available && bdm.entry) {
+                setBadDayMsg(bdm.entry)
+              }
+            })
+            .catch(() => {})
+        }
       } else if (res.type === 'crisis') {
         setMood('overwhelmed')
       }
@@ -399,18 +412,31 @@ export default function MorningPage() {
           </div>
         )}
 
+        {/* Bad-day interstitial — shown before result when mood is bad */}
+        {result && result.type === 'morning' && badDayMsg && !badDayDismissed && (
+          <BadDayInterstitial
+            entry={badDayMsg}
+            onContinue={() => {
+              markBadDayMessageUsed(badDayMsg.id).catch(() => {})
+              setBadDayDismissed(true)
+            }}
+          />
+        )}
+
         {/* Result view */}
         {result && result.type === 'crisis' && (
           <CrisisView result={result} onReset={() => setResult(null)} />
         )}
 
-        {result && result.type === 'morning' && (
+        {result && result.type === 'morning' && (!badDayMsg || badDayDismissed) && (
           <MorningResultView
             result={result}
             onSaveAndStart={() => router.push('/checklist')}
             onReset={() => {
               setResult(null)
               setUserInput('')
+              setBadDayMsg(null)
+              setBadDayDismissed(false)
             }}
           />
         )}
@@ -724,6 +750,77 @@ function SimpleEnergyBar({ level }: { level: number }) {
           />
         ))}
       </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Bad-day interstitial (9.4)
+// ──────────────────────────────────────────────────────────────────────────────
+
+function BadDayInterstitial({
+  entry,
+  onContinue,
+}: {
+  entry: BadDayMessageEntry
+  onContinue: () => void
+}) {
+  return (
+    <div
+      className="glass-card anim-fade-in-up"
+      style={{
+        padding: 32,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 20,
+        borderLeft: '2px solid var(--mood-color-soft, var(--mood-color))',
+        textAlign: 'center',
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.65rem',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        Từ chính bạn — ngày {entry.author_date}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '1.15rem',
+          fontFamily: 'var(--font-body, "DM Sans", system-ui)',
+          color: 'var(--text-primary)',
+          lineHeight: 1.8,
+          fontStyle: 'italic',
+          maxWidth: 480,
+        }}
+      >
+        &ldquo;{entry.message}&rdquo;
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.85rem',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
+          maxWidth: 420,
+        }}
+      >
+        Bạn đã viết câu này vào một ngày bạn cảm thấy ổn — để dặn mình cho lúc như hôm nay.
+      </p>
+      <button
+        type="button"
+        className="btn-mood"
+        onClick={onContinue}
+        style={{ borderRadius: 12, cursor: 'pointer', marginTop: 8 }}
+      >
+        Tiếp tục
+      </button>
     </div>
   )
 }

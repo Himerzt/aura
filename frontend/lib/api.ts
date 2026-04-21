@@ -8,6 +8,34 @@ import type {
   UserProfile,
 } from './types'
 
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+export interface AuthResponse {
+  success: boolean
+  token?: string
+  user?: { id: string; name: string; email: string }
+}
+
+export function postLogin(email: string, password: string): Promise<AuthResponse> {
+  return json<AuthResponse>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export function postRegister(
+  name: string,
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return json<AuthResponse>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  })
+}
+
+// ── Core fetch helper ───────────────────────────────────────────────────────
+
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
@@ -217,4 +245,43 @@ export function markWeeklyLetterRead(
 ): Promise<{ success: boolean }> {
   const params = sunday_date ? `?sunday_date=${sunday_date}` : ''
   return json(`/api/weekly-letter/read${params}`, { method: 'POST' })
+}
+
+// ── Phần 9.4: Bad-Day Rehearsal ───────────────────────────────────────────
+
+export interface BadDayMessageEntry {
+  id: number
+  message: string
+  author_date: string
+  last_used_at: string | null
+  use_count: number
+}
+
+export interface BadDayMessageTodayResponse {
+  available: boolean
+  reason: string | null
+  entry: BadDayMessageEntry | null
+}
+
+export function getBadDayMessageToday(): Promise<BadDayMessageTodayResponse> {
+  return json<BadDayMessageTodayResponse>('/api/bad-day-message/today')
+}
+
+export function postBadDayMessage(
+  message: string,
+): Promise<{ success: boolean; entry: BadDayMessageEntry }> {
+  return json('/api/bad-day-message', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+}
+
+export function markBadDayMessageUsed(
+  msgId: number,
+): Promise<{ success: boolean }> {
+  return json(`/api/bad-day-message/used?msg_id=${msgId}`, { method: 'POST' })
+}
+
+export function getBadDayMessages(): Promise<{ messages: BadDayMessageEntry[] }> {
+  return json('/api/bad-day-messages')
 }

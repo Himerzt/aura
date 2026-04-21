@@ -367,3 +367,66 @@ def get_history_for_week(sunday_date: str | None = None) -> list[dict]:
         if day in history:
             result.append({"date": day, **history[day]})
     return result
+
+
+# ── Bad-Day Rehearsal helpers (Phần 9.4) ──────────────────────────────────────
+
+COOLDOWN_DAYS = 7
+
+
+def save_bad_day_message(message: str, author_date: str | None = None) -> dict:
+    """Save a bad-day message to profile.bad_day_messages[]. Returns the saved entry."""
+    profile = load_profile()
+    messages = profile.setdefault("bad_day_messages", [])
+    entry = {
+        "id": len(messages),
+        "message": message.strip(),
+        "author_date": author_date or date.today().isoformat(),
+        "last_used_at": None,
+        "use_count": 0,
+    }
+    messages.append(entry)
+    save_profile(profile)
+    return entry
+
+
+def get_bad_day_message() -> dict | None:
+    """Return a bad-day message respecting 7-day cooldown. Prefer unused, then oldest-used."""
+    profile = load_profile()
+    messages = profile.get("bad_day_messages", [])
+    if not messages:
+        return None
+
+    today = date.today()
+    cutoff = (today - timedelta(days=COOLDOWN_DAYS)).isoformat()
+
+    # Split into: never used, used but cooled down, still in cooldown
+    never_used = [m for m in messages if m.get("last_used_at") is None]
+    cooled = [m for m in messages if m.get("last_used_at") and m["last_used_at"][:10] <= cutoff]
+    # in_cooldown are excluded
+
+    if never_used:
+        return never_used[0]
+    if cooled:
+        # Pick the one with oldest last_used_at
+        cooled.sort(key=lambda m: m["last_used_at"])
+        return cooled[0]
+    return None
+
+
+def mark_bad_day_message_used(msg_id: int) -> None:
+    """Mark a bad-day message as used (update last_used_at and use_count)."""
+    profile = load_profile()
+    messages = profile.get("bad_day_messages", [])
+    for m in messages:
+        if m.get("id") == msg_id:
+            m["last_used_at"] = datetime.now().isoformat(timespec="seconds")
+            m["use_count"] = m.get("use_count", 0) + 1
+            break
+    save_profile(profile)
+
+
+def get_all_bad_day_messages() -> list[dict]:
+    """Return all bad-day messages."""
+    profile = load_profile()
+    return profile.get("bad_day_messages", [])

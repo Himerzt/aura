@@ -19,15 +19,25 @@ def init_db() -> None:
     cursor = conn.cursor()
 
     cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS accounts (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            email           TEXT NOT NULL UNIQUE,
+            password_hash   TEXT NOT NULL,
+            name            TEXT NOT NULL,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS users (
             id          TEXT PRIMARY KEY DEFAULT 'local_user',
+            account_id  INTEGER,
             name        TEXT,
             goal        TEXT,
             context     TEXT,
             chronotype  TEXT CHECK(chronotype IN ('morning', 'evening', 'flexible')),
             support_style TEXT CHECK(support_style IN ('push', 'gentle', 'balanced')),
             onboarding_completed INTEGER DEFAULT 0,
-            created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (account_id) REFERENCES accounts(id)
         );
 
         CREATE TABLE IF NOT EXISTS daily_entries (

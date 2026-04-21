@@ -70,6 +70,17 @@ Agent 4: Reflection          → summary, pattern_detected, tomorrow_question
 Cập nhật history.json
 ```
 
+**Backend pipeline hàng tuần (Chủ nhật):**
+```
+history_7_days + profile + patterns
+    │
+    ▼
+Agent 5: Weekly Letter       → letter_title, letter_body, signature_mood
+    │
+    ▼
+Lưu history[sunday].weekly_letter + hiển thị Dashboard
+```
+
 ---
 
 ## 4. Data Models
@@ -120,6 +131,13 @@ Cập nhật history.json
       "summary": "string",
       "pattern_detected": false,
       "tomorrow_question": "string"
+    },
+    "weekly_letter": {
+      "letter_title": "string (tiếng Việt)",
+      "letter_body": "string (tiếng Việt, 200-400 từ)",
+      "signature_mood": "warm | proud | gentle | honest | hopeful",
+      "generated_at": "ISO datetime",
+      "read": false
     },
     "streak_day": 1
   }
@@ -208,10 +226,13 @@ AURA_NEW/
 │   │   ├── wellness_check.py
 │   │   ├── psychology_insight.py
 │   │   ├── task_generator.py
-│   │   └── reflection.py
+│   │   ├── reflection.py
+│   │   └── weekly_letter.py
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── memory.py
+│   │   ├── memory_recall.py
+│   │   ├── pattern_alert.py
 │   │   ├── prompts.py
 │   │   ├── pipeline.py
 │   │   └── database.py
@@ -265,6 +286,7 @@ AURA_NEW/
     │       ├── EnergyBar.tsx
     │       ├── FrameworkTag.tsx
     │       ├── InsightCard.tsx
+    │       ├── MemoryRecallCard.tsx
     │       ├── MilestoneToast.tsx
     │       ├── MoodOrb.tsx
     │       ├── StreakDisplay.tsx

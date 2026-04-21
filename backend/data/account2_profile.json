@@ -1,0 +1,37 @@
+{
+  "user_id": "local_user",
+  "created_at": "2026-03-22",
+  "name": "Nguyễn Quốc Huy",
+  "goal": "Tìm được việc Intern/Fresher AI hoặc BA trong 3 tháng để tự lo cho bản thân",
+  "context": "Mới tốt nghiệp, chưa có việc. Rất khát khao thay đổi bản thân, muốn giỏi hơn. Nhưng suốt tháng qua bị kẹt trong vòng lặp: quyết tâm -> lên kế hoạch -> làm được vài ngày -> trì hoãn -> tự dằn vặt. Có lúc tính đi chạy Be/Grab tạm để có thu nhập.",
+  "past_attempts": [
+    "Học khoá Python online — bỏ giữa chừng",
+    "Làm CV gửi 5 công ty — không ai gọi",
+    "Đọc sách self-help — đọc xong thì quên",
+    "Đăng ký khoá BA — chưa bắt đầu"
+  ],
+  "daily_anchors": [
+    "Pha cà phê sáng",
+    "Lướt điện thoại trước khi ngủ",
+    "Ăn cơm với gia đình trưa"
+  ],
+  "chronotype": "evening",
+  "support_style": "gentle",
+  "onboarding_completed": true,
+  "bad_day_messages": [
+    {
+      "id": 0,
+      "message": "Huy ơi, mình biết bạn đang mệt. Nhưng việc bạn mở app này hôm nay, ngồi đây đọc dòng chữ này — đó là bằng chứng bạn chưa bỏ cuộc. Không ai giỏi ngay từ đầu. Làm 1 việc nhỏ thôi, rồi nghỉ.",
+      "author_date": "2026-03-27",
+      "last_used_at": null,
+      "use_count": 0
+    },
+    {
+      "id": 1,
+      "message": "Ngày 5 trước bạn viết: 'Mình sẽ không bỏ cuộc lần nữa'. Bạn vẫn đang ở đây. Đó là đúng rồi.",
+      "author_date": "2026-04-03",
+      "last_used_at": null,
+      "use_count": 0
+    }
+  ]
+}

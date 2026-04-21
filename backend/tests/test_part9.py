@@ -451,6 +451,113 @@ class TestWeeklyLetterAgent:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 9.4 — Bad-Day Rehearsal Tests
+# ═══════════════════════════════════════════════════════════════
+
+from core.memory import (
+    save_bad_day_message,
+    get_bad_day_message,
+    mark_bad_day_message_used,
+    get_all_bad_day_messages,
+    load_profile,
+    save_profile,
+    PROFILE_PATH,
+    COOLDOWN_DAYS,
+)
+
+
+class TestBadDayMessage:
+    """Test bad-day message lifecycle with real profile file (backup/restore)."""
+
+    def setup_method(self):
+        self._backup = None
+        if PROFILE_PATH.exists():
+            self._backup = _read_json(PROFILE_PATH)
+        # Write clean profile without bad_day_messages
+        profile = {
+            "user_id": "test",
+            "name": "Test",
+            "onboarding_completed": True,
+        }
+        _write_json(PROFILE_PATH, profile)
+
+    def teardown_method(self):
+        if self._backup is not None:
+            _write_json(PROFILE_PATH, self._backup)
+        elif PROFILE_PATH.exists():
+            _write_json(PROFILE_PATH, {"user_id": "test"})
+
+    def test_save_message(self):
+        entry = save_bad_day_message("Ngày nào cũng qua")
+        assert entry["message"] == "Ngày nào cũng qua"
+        assert entry["id"] == 0
+        assert entry["use_count"] == 0
+        assert entry["last_used_at"] is None
+
+    def test_save_multiple(self):
+        save_bad_day_message("Message 1")
+        save_bad_day_message("Message 2")
+        msgs = get_all_bad_day_messages()
+        assert len(msgs) == 2
+        assert msgs[0]["id"] == 0
+        assert msgs[1]["id"] == 1
+
+    def test_get_returns_unused_first(self):
+        save_bad_day_message("Unused msg")
+        save_bad_day_message("Another unused")
+        result = get_bad_day_message()
+        assert result is not None
+        assert result["message"] == "Unused msg"
+
+    def test_get_returns_none_when_empty(self):
+        result = get_bad_day_message()
+        assert result is None
+
+    def test_mark_used(self):
+        save_bad_day_message("Will be used")
+        mark_bad_day_message_used(0)
+        msgs = get_all_bad_day_messages()
+        assert msgs[0]["use_count"] == 1
+        assert msgs[0]["last_used_at"] is not None
+
+    def test_cooldown_respected(self):
+        """After marking as used, message should not be returned within cooldown."""
+        save_bad_day_message("Cooldown test")
+        mark_bad_day_message_used(0)
+        # Only 1 message, just used → should return None (in cooldown)
+        result = get_bad_day_message()
+        assert result is None
+
+    def test_cooldown_expired(self):
+        """Message used > COOLDOWN_DAYS ago should be returned."""
+        save_bad_day_message("Old message")
+        # Manually set last_used_at to 8 days ago
+        profile = load_profile()
+        old_date = (date.today() - timedelta(days=COOLDOWN_DAYS + 1)).isoformat()
+        profile["bad_day_messages"][0]["last_used_at"] = old_date + "T08:00:00"
+        save_profile(profile)
+
+        result = get_bad_day_message()
+        assert result is not None
+        assert result["message"] == "Old message"
+
+    def test_prefers_never_used_over_cooled(self):
+        """Never-used messages should be returned before cooled-down ones."""
+        save_bad_day_message("Used long ago")
+        save_bad_day_message("Never used")
+        # Mark first as used long ago
+        profile = load_profile()
+        old_date = (date.today() - timedelta(days=COOLDOWN_DAYS + 1)).isoformat()
+        profile["bad_day_messages"][0]["last_used_at"] = old_date + "T08:00:00"
+        profile["bad_day_messages"][0]["use_count"] = 1
+        save_profile(profile)
+
+        result = get_bad_day_message()
+        assert result is not None
+        assert result["message"] == "Never used"
+
+
+# ═══════════════════════════════════════════════════════════════
 # Run
 # ═══════════════════════════════════════════════════════════════
 

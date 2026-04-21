@@ -26,6 +26,10 @@ from core.memory import (
     mark_weekly_letter_read,
     get_all_weekly_letters,
     get_history_for_week,
+    save_bad_day_message,
+    get_bad_day_message,
+    mark_bad_day_message_used,
+    get_all_bad_day_messages,
     VALID_FRICTION_REASONS,
 )
 from core.pipeline import run_morning_pipeline
@@ -414,6 +418,57 @@ async def mark_letter_read(sunday_date: str | None = None):
     """Mark the weekly letter for a given Sunday as read."""
     mark_weekly_letter_read(sunday_date)
     return {"success": True}
+
+
+# ── Phần 9.4: Bad-Day Rehearsal ──────────────────────────────────────────
+
+
+class BadDayMessageRequest(BaseModel):
+    message: str
+
+
+@router.post("/bad-day-message")
+async def create_bad_day_message(req: BadDayMessageRequest):
+    """Save a bad-day rehearsal message written by the user on a good day."""
+    text = req.message.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="message không được để trống")
+    entry = save_bad_day_message(text)
+    return {"success": True, "entry": entry}
+
+
+@router.get("/bad-day-message/today")
+async def get_bad_day_message_today():
+    """
+    Return a bad-day message ONLY if today's mood is overwhelmed or numb.
+    Otherwise return available=false so the frontend doesn't show it.
+    """
+    today_entry = get_today_entry()
+    morning = today_entry.get("morning", {})
+    mood = morning.get("mood_state")
+
+    # Only serve on bad days
+    if mood not in ("overwhelmed", "numb"):
+        return {"available": False, "reason": "mood_not_bad", "entry": None}
+
+    entry = get_bad_day_message()
+    if not entry:
+        return {"available": False, "reason": "no_messages", "entry": None}
+
+    return {"available": True, "reason": None, "entry": entry}
+
+
+@router.post("/bad-day-message/used")
+async def bad_day_message_used(msg_id: int):
+    """Mark a bad-day message as used after the user reads it."""
+    mark_bad_day_message_used(msg_id)
+    return {"success": True}
+
+
+@router.get("/bad-day-messages")
+async def list_bad_day_messages():
+    """Return all bad-day messages for management/display."""
+    return {"messages": get_all_bad_day_messages()}
 
 
 @router.get("/weekly-insight")

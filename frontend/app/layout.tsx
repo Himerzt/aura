@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Sora, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import MainContent from '@/components/MainContent'
 import PageTransition from '@/components/ui/PageTransition'
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import { ThemeProvider } from '@/lib/theme-context'
@@ -59,9 +60,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="aura-bg" aria-hidden="true" />
               <div className="flex min-h-screen">
                 <Navigation />
-                <main className="flex-1 md:ml-60">
+                <MainContent>
                   <PageTransition>{children}</PageTransition>
-                </main>
+                </MainContent>
               </div>
               <ServiceWorkerRegistrar />
             </MoodBody>

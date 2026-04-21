@@ -345,6 +345,189 @@ Response 200:
 
 ---
 
+### Memory Recall (Phần 9.1)
+
+```
+GET /api/memory-recall
+
+Response 200 (match found):
+{
+  "available": true,
+  "reason": null,
+  "match": {
+    "date": "YYYY-MM-DD",
+    "user_quote": "string",
+    "tasks_done": 2,
+    "tasks_total": 3,
+    "days_ago": 12,
+    "mood": "overwhelmed",
+    "energy": 3,
+    "similarity_score": 0.85
+  }
+}
+
+Response 200 (no match):
+{
+  "available": false,
+  "reason": "no_match | no_morning_today",
+  "match": null
+}
+```
+
+---
+
+### Pattern Alert (Phần 9.2)
+
+```
+GET /api/pattern-alert
+
+Response 200 (alert active):
+{
+  "active": true,
+  "alert": {
+    "pattern_name": "shame_spiral | learned_helplessness | avoidance_loop",
+    "severity": "moderate | high",
+    "recommended_override": "self_compassion",
+    "consecutive_days": 3,
+    "details": "string"
+  }
+}
+
+Response 200 (no alert):
+{
+  "active": false,
+  "alert": null
+}
+```
+
+---
+
+### Weekly Letter (Phần 9.3)
+
+```
+GET /api/weekly-letter
+
+Response 200 (letter available):
+{
+  "available": true,
+  "reason": null,
+  "sunday_date": "YYYY-MM-DD",
+  "letter": {
+    "letter_title": "string (tiếng Việt, 3-8 từ)",
+    "letter_body": "string (tiếng Việt, 200-400 từ)",
+    "signature_mood": "warm | proud | gentle | honest | hopeful",
+    "generated_at": "ISO datetime",
+    "read": false
+  },
+  "archive": [
+    {
+      "date": "YYYY-MM-DD",
+      "letter_title": "string",
+      "letter_body": "string",
+      "signature_mood": "string",
+      "generated_at": "ISO datetime",
+      "read": true
+    }
+  ]
+}
+
+Response 200 (not enough data):
+{
+  "available": false,
+  "reason": "not_enough_data",
+  "days_with_data": 4,
+  "letter": null,
+  "archive": []
+}
+```
+
+```
+POST /api/weekly-letter/read?sunday_date=YYYY-MM-DD
+
+Response 200:
+{
+  "success": true
+}
+```
+
+---
+
+### Bad-Day Rehearsal (Phần 9.4)
+
+```
+POST /api/bad-day-message
+Content-Type: application/json
+
+Body:
+{
+  "message": "string — câu dặn mình cho ngày khó"
+}
+
+Response 200:
+{
+  "success": true,
+  "entry": {
+    "id": 0,
+    "message": "string",
+    "author_date": "YYYY-MM-DD",
+    "last_used_at": null,
+    "use_count": 0
+  }
+}
+```
+
+```
+GET /api/bad-day-message/today
+
+Response 200 (mood is overwhelmed/numb + message available):
+{
+  "available": true,
+  "reason": null,
+  "entry": {
+    "id": 0,
+    "message": "string",
+    "author_date": "YYYY-MM-DD",
+    "last_used_at": "ISO datetime | null",
+    "use_count": 1
+  }
+}
+
+Response 200 (mood not bad or no messages):
+{
+  "available": false,
+  "reason": "mood_not_bad | no_messages",
+  "entry": null
+}
+```
+
+```
+POST /api/bad-day-message/used?msg_id=0
+
+Response 200:
+{
+  "success": true
+}
+```
+
+```
+GET /api/bad-day-messages
+
+Response 200:
+{
+  "messages": [
+    {
+      "id": 0,
+      "message": "string",
+      "author_date": "YYYY-MM-DD",
+      "last_used_at": "ISO datetime | null",
+      "use_count": 0
+    }
+  ]
+}
+```
+
+---
+
 ## Error Responses
 
 ```json
