@@ -20,11 +20,20 @@ from core.memory import (
     get_pattern_radar,
     get_framework_diversity_7d,
     get_energy_mood_matrix_7d,
+    get_most_recent_sunday,
+    get_weekly_letter,
+    save_weekly_letter,
+    mark_weekly_letter_read,
+    get_all_weekly_letters,
+    get_history_for_week,
     VALID_FRICTION_REASONS,
 )
 from core.pipeline import run_morning_pipeline
+from core.memory_recall import find_similar_past_day
+from core.pattern_alert import detect_risk_pattern
 from agents.reflection import run_reflection
 from agents.task_generator import run_task_generator
+from agents.weekly_letter import run_weekly_letter
 
 router = APIRouter(prefix="/api", tags=["aura"])
 
@@ -126,6 +135,9 @@ async def morning_checkin(req: MorningRequest):
                 for task in result["tasks"]
             ],
         }
+        # Save pattern_alert metadata if present (9.2)
+        if result.get("pattern_alert"):
+            morning_data["pattern_alert"] = result["pattern_alert"]
         save_morning(morning_data)
 
     return result
@@ -287,6 +299,121 @@ async def energy_mood_matrix():
 async def framework_diversity():
     """Shorthand for pattern-radar with 7-day window."""
     return {"counts": get_framework_diversity_7d()}
+
+
+# ── Phần 9.1: Memory Recall ─────────────────────────────────────────────────
+
+@router.get("/memory-recall")
+async def memory_recall():
+    """Find a similar past day the user overcame. Requires >= 14 days data."""
+    today_entry = get_today_entry()
+    morning = today_entry.get("morning", {})
+    current_mood = morning.get("mood_state")
+    current_energy = morning.get("energy_level")
+
+    if not current_mood or not current_energy:
+        return {"available": False, "reason": "no_morning_today", "match": None}
+
+    match = find_similar_past_day(current_mood, current_energy)
+    if not match:
+        return {"available": False, "reason": "no_match", "match": None}
+
+    return {"available": True, "reason": None, "match": match}
+
+
+# ── Phần 9.2: Pattern Alert Status ──────────────────────────────────────────
+
+@router.get("/pattern-alert")
+async def pattern_alert_status():
+    """Check if a pattern alert is currently active."""
+    alert = detect_risk_pattern()
+    if not alert:
+        return {"active": False, "alert": None}
+    return {"active": True, "alert": alert}
+
+
+# ── Phần 9.3: Weekly Letter ────────────────────────────────────────────────
+
+@router.get("/weekly-letter")
+async def weekly_letter():
+    """
+    Return the weekly letter. Only generates if:
+    - Today is Sunday OR the most recent Sunday's letter hasn't been read yet
+    - At least 7 days of history data exist
+    If a letter already exists for this Sunday, return it without re-generating.
+    """
+    sunday = get_most_recent_sunday()
+    today = date.today()
+
+    # Check if we have enough data (>= 7 days)
+    history_week = get_history_for_week(sunday)
+    days_with_data = [d for d in history_week if d.get("morning")]
+    if len(days_with_data) < 7:
+        return {
+            "available": False,
+            "reason": "not_enough_data",
+            "days_with_data": len(days_with_data),
+            "letter": None,
+            "archive": get_all_weekly_letters(),
+        }
+
+    # Check if today is Sunday or letter is unread
+    existing = get_weekly_letter(sunday)
+    if existing:
+        return {
+            "available": True,
+            "reason": None,
+            "sunday_date": sunday,
+            "letter": existing,
+            "archive": get_all_weekly_letters(),
+        }
+
+    # Only generate on Sunday (day 6) or if letter doesn't exist yet
+    # for the most recent Sunday (allow reading any day of the week)
+    is_sunday = today.weekday() == 6
+    if not is_sunday:
+        # Not Sunday and no letter exists — check if past Sunday had enough data
+        # Allow generation any day if Sunday has passed and letter wasn't generated
+        pass
+
+    # Generate the letter
+    profile = load_profile()
+
+    # Collect patterns detected this week
+    patterns = []
+    for day in history_week:
+        morning = day.get("morning", {})
+        if morning.get("pattern"):
+            patterns.append(morning["pattern"])
+        alert = morning.get("pattern_alert")
+        if alert:
+            patterns.append(alert.get("pattern_name", ""))
+
+    try:
+        letter = await run_weekly_letter(
+            history_7_days=history_week,
+            user_profile=profile,
+            patterns_detected=patterns if patterns else None,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"AI pipeline lỗi: {str(e)}")
+
+    save_weekly_letter(letter, sunday)
+
+    return {
+        "available": True,
+        "reason": None,
+        "sunday_date": sunday,
+        "letter": get_weekly_letter(sunday),
+        "archive": get_all_weekly_letters(),
+    }
+
+
+@router.post("/weekly-letter/read")
+async def mark_letter_read(sunday_date: str | None = None):
+    """Mark the weekly letter for a given Sunday as read."""
+    mark_weekly_letter_read(sunday_date)
+    return {"success": True}
 
 
 @router.get("/weekly-insight")

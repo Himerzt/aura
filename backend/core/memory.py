@@ -301,3 +301,69 @@ def replace_task(
 def get_today_morning() -> dict:
     """Return today's morning entry (empty dict if none)."""
     return get_today_entry().get("morning", {})
+
+
+# ── Weekly Letter helpers (Phần 9.3) ────────────────────────────────────────
+
+def get_most_recent_sunday() -> str:
+    """Return ISO date string of the most recent Sunday (including today if Sunday)."""
+    today = date.today()
+    days_since_sunday = today.weekday() + 1  # Monday=0 ... Sunday=6 → +1
+    if today.weekday() == 6:  # today is Sunday
+        days_since_sunday = 0
+    sunday = today - timedelta(days=days_since_sunday)
+    return sunday.isoformat()
+
+
+def get_weekly_letter(sunday_date: str | None = None) -> dict | None:
+    """Return the weekly letter for a given Sunday, or None if not found."""
+    history = _load_history()
+    target = sunday_date or get_most_recent_sunday()
+    return history.get(target, {}).get("weekly_letter")
+
+
+def save_weekly_letter(letter: dict, sunday_date: str | None = None) -> None:
+    """Save a weekly letter to history under the Sunday date."""
+    target = sunday_date or get_most_recent_sunday()
+    history = _load_history()
+    entry = history.setdefault(target, {})
+    letter["generated_at"] = datetime.now().isoformat(timespec="seconds")
+    letter["read"] = False
+    entry["weekly_letter"] = letter
+    _save_history(history)
+
+
+def mark_weekly_letter_read(sunday_date: str | None = None) -> None:
+    """Mark a weekly letter as read."""
+    target = sunday_date or get_most_recent_sunday()
+    history = _load_history()
+    letter = history.get(target, {}).get("weekly_letter")
+    if letter:
+        letter["read"] = True
+        _save_history(history)
+
+
+def get_all_weekly_letters() -> list[dict]:
+    """Return all weekly letters from history, newest first."""
+    history = _load_history()
+    letters = []
+    for date_str in sorted(history.keys(), reverse=True):
+        wl = history[date_str].get("weekly_letter")
+        if wl:
+            letters.append({"date": date_str, **wl})
+    return letters
+
+
+def get_history_for_week(sunday_date: str | None = None) -> list[dict]:
+    """Return 7 days of history ending on sunday_date (Mon-Sun)."""
+    history = _load_history()
+    if sunday_date:
+        end = date.fromisoformat(sunday_date)
+    else:
+        end = date.fromisoformat(get_most_recent_sunday())
+    result = []
+    for i in range(6, -1, -1):  # Monday to Sunday
+        day = (end - timedelta(days=i)).isoformat()
+        if day in history:
+            result.append({"date": day, **history[day]})
+    return result

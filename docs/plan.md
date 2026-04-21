@@ -19,6 +19,10 @@
 - [x] Phần 7 — Frontend: Checklist + Evening + Dashboard (+ Easy extensions) ✓ (2026-04-16)
 - [x] Phần 8 — Polish: Streak Shield + Animations + Responsive (+ Medium extensions)
 - [ ] Phần 9 — Sáng Kiến Nâng Cao: Memory Recall + Pattern Alert + Weekly Letter + Bad-Day Rehearsal
+  - [x] 9.1 — Aura Memory Recall ✓ (2026-04-20)
+  - [x] 9.2 — Pattern Alert Auto-Mode ✓ (2026-04-20)
+  - [x] 9.3 — Weekly Letter (Agent 5) ✓ (2026-04-21)
+  - [ ] 9.4 — Bad-Day Rehearsal
 
 ---
 
@@ -521,63 +525,76 @@ Thêm CORS middleware cho localhost:3000.
 
 **Mục tiêu:** Biến AURA từ "task manager có AI" thành "companion nhớ bạn". Phần này cần agent mới hoặc meta-logic trên lịch sử dài. Chỉ làm sau khi Phần 1-8 ổn định và có ít nhất 14 ngày data thật.
 
+### Phần 9 — Bảng Kế Hoạch Thực Hiện
+
+| Milestone | Nội dung | Status |
+|-----------|----------|--------|
+| 9.1 | Aura Memory Recall | [x] ✓ (2026-04-20) |
+| 9.2 | Pattern Alert Auto-Mode | [x] ✓ (2026-04-20) |
+| 9.3 | Weekly Letter (Agent 5) | [x] ✓ (2026-04-21) |
+| 9.4 | Bad-Day Rehearsal | [ ] |
+
 **Việc cần làm:**
 
-### 9.1 — Aura Memory Recall
+### 9.1 — Aura Memory Recall ✅ DONE (2026-04-20)
 
 **Ý tưởng:** Khi mood_state hôm nay trùng với 1 ngày trong quá khứ đã vượt qua thành công, dashboard hiện chính lời của user từ ngày đó làm liều thuốc — không phải advice generic.
 
 `backend/core/memory_recall.py` (mới):
-- [ ] `find_similar_past_day(current_mood, current_energy)` — tìm entry có `mood_state` tương đồng + tasks completed > 50% + evening reflection không phải crisis.
-- [ ] Similarity score dựa trên: mood match (0.5) + energy ±2 (0.3) + day_count distance (0.2).
-- [ ] Trả về `{date, user_quote, tasks_done, days_ago}`.
+- [x] `find_similar_past_day(current_mood, current_energy)` — tìm entry có `mood_state` tương đồng + tasks completed > 50% + evening reflection không phải crisis.
+- [x] Similarity score dựa trên: mood match (0.5) + energy ±2 (0.3) + day_count distance (0.2).
+- [x] Trả về `{date, user_quote, tasks_done, days_ago}`.
 
-`backend/main.py`:
-- [ ] `GET /api/memory-recall` — trả về similar past day nếu có, null nếu không đủ data (< 14 ngày).
+`backend/routers/api.py`:
+- [x] `GET /api/memory-recall` — trả về similar past day nếu có, null nếu không đủ data (< 14 ngày).
 
 `frontend/components/aura/MemoryRecallCard.tsx` (mới):
-- [ ] Card dashboard: "30 ngày trước bạn cũng overwhelmed như hôm nay. Ngày đó bạn đã viết: '...' và bạn đã hoàn thành 2/3 task."
-- [ ] Tone: không patronizing, không "bạn làm được mà" generic.
+- [x] Card dashboard: "N ngày trước bạn cũng [mood] như hôm nay. Ngày đó bạn đã hoàn thành X/Y task."
+- [x] Tone: không patronizing, không "bạn làm được mà" generic.
 
-### 9.2 — Pattern Alert Auto-Mode
+### 9.2 — Pattern Alert Auto-Mode ✅ DONE (2026-04-20)
 
 **Ý tưởng:** Nếu detect shame spiral / learned helplessness ≥ 3 ngày liên tục, pipeline tự chuyển sang Self-Compassion priority mode, user không cần biết — Agent 2 bỏ qua lựa chọn bình thường.
 
 `backend/core/pattern_alert.py` (mới):
-- [ ] `detect_risk_pattern(history_7d)` — rule-based detector:
+- [x] `detect_risk_pattern(history_7d)` — rule-based detector:
   - Shame spiral: ≥ 3 ngày liên tục có reflection chứa keywords tự chỉ trích + tasks < 30% complete
   - Learned helplessness: ≥ 5 ngày liên tục energy ≤ 3 + không có task nào complete
   - Avoidance loop: skip morning check-in ≥ 2 ngày liên tục
-- [ ] Trả về `{pattern_name, severity, recommended_override}`.
+- [x] Trả về `{pattern_name, severity, recommended_override}`.
 
 `backend/core/pipeline.py`:
-- [ ] `run_morning_pipeline()` check pattern_alert TRƯỚC khi gọi Agent 2.
-- [ ] Nếu có alert → inject `force_framework` vào Agent 2 context, override selection logic.
-- [ ] Log alert vào `history[date].meta.pattern_alert`.
+- [x] `run_morning_pipeline()` check pattern_alert TRƯỚC khi gọi Agent 2.
+- [x] Nếu có alert → inject `force_framework` vào Agent 2 context, override selection logic.
+- [x] Log alert vào `history[date].morning.pattern_alert`.
 
 `frontend/components/aura/`:
-- [ ] Không cần UI đặc biệt — user nhận framework đã override một cách tự nhiên.
-- [ ] Optional: dashboard có indicator nhỏ "AURA đang ưu tiên self-compassion cho bạn tuần này" nếu alert active.
+- [x] User nhận framework đã override một cách tự nhiên (pipeline tự xử lý).
+- [x] Dashboard có indicator "AURA care mode" khi alert active (PatternAlertIndicator component).
 
-### 9.3 — Weekly Letter (Agent 5)
+### 9.3 — Weekly Letter (Agent 5) ✅ DONE (2026-04-21)
 
 **Ý tưởng:** Chủ nhật, agent mới tổng hợp cả tuần thành 1 lá thư tiếng Việt cho user, tone như người bạn thân đã dõi theo 7 ngày. Không phải "insights", không phải bullet points — là thư.
 
 `backend/agents/weekly_letter.py` (mới):
-- [ ] Input: `history_7_days`, `profile`, `patterns_detected`, `memory_recalls`.
-- [ ] System prompt: viết thư tiếng Việt, xưng "mình" - "bạn", 200-400 từ, đề cập cụ thể 2-3 khoảnh khắc trong tuần.
-- [ ] Output JSON: `{letter_title, letter_body, signature_mood}`.
+- [x] Input: `history_7_days`, `profile`, `patterns_detected`, `memory_recalls`.
+- [x] System prompt: viết thư tiếng Việt, xưng "mình" - "bạn", 200-400 từ, đề cập cụ thể 2-3 khoảnh khắc trong tuần.
+- [x] Output JSON: `{letter_title, letter_body, signature_mood}`.
 
 `backend/core/prompts.py`:
-- [ ] `get_weekly_letter_prompt()` — system prompt với examples tone (tránh "as an AI", tránh listicle).
+- [x] `get_weekly_letter_prompt()` — system prompt với examples tone (tránh "as an AI", tránh listicle).
 
-`backend/main.py`:
-- [ ] `GET /api/weekly-letter` — chỉ return nếu hôm nay là Chủ nhật (hoặc đã qua CN gần nhất và chưa đọc) + đủ 7 ngày data.
-- [ ] Letter lưu vào `history[sunday_date].weekly_letter` để đọc lại sau.
+`backend/routers/api.py`:
+- [x] `GET /api/weekly-letter` — return nếu đủ 7 ngày data. Auto-generate nếu chưa có letter cho Sunday gần nhất. Lưu vào `history[sunday_date].weekly_letter`.
+- [x] `POST /api/weekly-letter/read` — mark letter as read.
+
+`backend/core/memory.py`:
+- [x] `get_most_recent_sunday()`, `get_weekly_letter()`, `save_weekly_letter()`, `mark_weekly_letter_read()`, `get_all_weekly_letters()`, `get_history_for_week()`.
 
 `frontend/app/dashboard/page.tsx`:
-- [ ] Weekly Letter card — prominent position nếu có thư chưa đọc, collapsible archive cho thư cũ.
-- [ ] Reading view: font Sora serif-like, max-width 560px, typography như đọc thư thật.
+- [x] Weekly Letter card — prominent position nếu có thư chưa đọc, collapsible archive cho thư cũ.
+- [x] Reading view: DM Sans body font, max-width 560px, typography như đọc thư thật.
+- [x] Auto mark-as-read khi expand. Archive accordion cho thư cũ.
 
 ### 9.4 — Bad-Day Rehearsal
 
@@ -600,11 +617,25 @@ Thêm CORS middleware cho localhost:3000.
 - [ ] Nếu hôm nay mood tốt (stable/energized) + chưa có message gần đây → gợi ý nhẹ "Viết 1 câu cho ngày khó sau này?".
 
 **Success Criteria Phần 9:**
-- [ ] Memory Recall chỉ fire khi có ≥ 14 ngày data và similarity score > 0.7
-- [ ] Pattern Alert không false positive trên data lành mạnh (test với mock 14 ngày tốt)
-- [ ] Weekly Letter có tone thực sự "người", không giống AI output (review bằng mắt)
+- [x] Memory Recall chỉ fire khi có ≥ 14 ngày data và similarity score > 0.7 ✓ (23 unit tests pass, API verified)
+- [x] Pattern Alert không false positive trên data lành mạnh (test với mock 14 ngày tốt) ✓ (test_no_false_positive_one_bad_day pass)
+- [ ] Weekly Letter có tone thực sự "người", không giống AI output (review bằng mắt — cần browser test)
 - [ ] Bad-Day Rehearsal không spam — cooldown 7 ngày giữa các lần dùng lại 1 message
 - [ ] Tất cả 4 feature có thể tắt qua setting — không ép user dùng meta-layer
+
+**Test Evidence (9.1 + 9.2):**
+- 23/23 pytest pass (`backend/tests/test_part9.py`)
+- `GET /api/memory-recall` → returns match with score 0.9 on recall scenario
+- `GET /api/pattern-alert` → returns shame_spiral on shame scenario, avoidance_loop on avoidance scenario, null on clean scenario
+- Dashboard page compiles 200 OK, no frontend errors
+- User browser test approved 2026-04-20
+
+**Test Evidence (9.3):**
+- 34/34 pytest pass (`backend/tests/test_part9.py`) — 11 new tests for weekly letter
+- Tests cover: Sunday date calc, save/load/read lifecycle, archive, history-for-week, prompt validation, agent output + mood coercion
+- TypeScript compile clean (`npx tsc --noEmit` — 0 errors)
+- Frontend WeeklyLetterCard renders in dashboard with expand/collapse, auto-mark-read, archive accordion
+- Browser test needed: verify letter generation with real Gemini API + UI rendering
 
 ---
 

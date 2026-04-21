@@ -143,3 +143,78 @@ export function getFrameworkDiversity(): Promise<{
 }> {
   return json(`/api/framework-diversity`)
 }
+
+// ── Phần 9.1: Memory Recall ─────────────────────────────────────────────
+
+export interface MemoryRecallMatch {
+  date: string
+  user_quote: string
+  tasks_done: number
+  tasks_total: number
+  days_ago: number
+  mood: string
+  energy: number
+  similarity_score: number
+}
+
+export interface MemoryRecallResponse {
+  available: boolean
+  reason: string | null
+  match: MemoryRecallMatch | null
+}
+
+export function getMemoryRecall(): Promise<MemoryRecallResponse> {
+  return json<MemoryRecallResponse>('/api/memory-recall')
+}
+
+// ── Phần 9.2: Pattern Alert ─────────────────────────────────────────────
+
+export interface PatternAlert {
+  pattern_name: string
+  severity: string
+  recommended_override: string
+  consecutive_days: number
+  details: string
+}
+
+export interface PatternAlertResponse {
+  active: boolean
+  alert: PatternAlert | null
+}
+
+export function getPatternAlert(): Promise<PatternAlertResponse> {
+  return json<PatternAlertResponse>('/api/pattern-alert')
+}
+
+// ── Phần 9.3: Weekly Letter ─────────────────────────────────────────────
+
+export interface WeeklyLetter {
+  letter_title: string
+  letter_body: string
+  signature_mood: 'warm' | 'proud' | 'gentle' | 'honest' | 'hopeful'
+  generated_at: string
+  read: boolean
+}
+
+export interface WeeklyLetterArchiveItem extends WeeklyLetter {
+  date: string
+}
+
+export interface WeeklyLetterResponse {
+  available: boolean
+  reason: string | null
+  sunday_date?: string
+  letter: WeeklyLetter | null
+  archive: WeeklyLetterArchiveItem[]
+}
+
+export function getWeeklyLetter(): Promise<WeeklyLetterResponse> {
+  return json<WeeklyLetterResponse>('/api/weekly-letter')
+}
+
+export function markWeeklyLetterRead(
+  sunday_date?: string,
+): Promise<{ success: boolean }> {
+  const params = sunday_date ? `?sunday_date=${sunday_date}` : ''
+  return json(`/api/weekly-letter/read${params}`, { method: 'POST' })
+}

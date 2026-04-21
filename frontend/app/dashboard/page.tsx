@@ -10,14 +10,23 @@ import {
   getWeeklyInsight,
   getPatternRadar,
   getEnergyMoodMatrix,
+  getMemoryRecall,
+  getPatternAlert,
+  getWeeklyLetter,
+  markWeeklyLetterRead,
   type WeeklyInsightResponse,
   type PatternRadarResponse,
   type EnergyMoodPoint,
+  type MemoryRecallResponse,
+  type PatternAlertResponse,
+  type WeeklyLetterResponse,
+  type WeeklyLetterArchiveItem,
 } from '@/lib/api'
 import type { Framework } from '@/lib/types'
 import { useMood } from '@/lib/mood-context'
 import StreakDisplay from '@/components/aura/StreakDisplay'
 import MilestoneToast from '@/components/aura/MilestoneToast'
+import MemoryRecallCard from '@/components/aura/MemoryRecallCard'
 import ErrorCard from '@/components/ui/ErrorCard'
 import { DashboardSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, MoodState, UserProfile, StreakInfo } from '@/lib/types'
@@ -64,6 +73,9 @@ export default function DashboardPage() {
   const [weeklyInsight, setWeeklyInsight] = useState<WeeklyInsightResponse | null>(null)
   const [radar, setRadar] = useState<PatternRadarResponse | null>(null)
   const [energyMood, setEnergyMood] = useState<EnergyMoodPoint[]>([])
+  const [memoryRecall, setMemoryRecall] = useState<MemoryRecallResponse | null>(null)
+  const [patternAlertData, setPatternAlertData] = useState<PatternAlertResponse | null>(null)
+  const [weeklyLetter, setWeeklyLetter] = useState<WeeklyLetterResponse | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -78,8 +90,11 @@ export default function DashboardPage() {
       getWeeklyInsight(),
       getPatternRadar(30).catch(() => null),
       getEnergyMoodMatrix().catch(() => ({ data: [] as EnergyMoodPoint[] })),
+      getMemoryRecall().catch(() => null),
+      getPatternAlert().catch(() => null),
+      getWeeklyLetter().catch(() => null),
     ])
-      .then(([prof, str, hist, tod, wi, radarRes, emRes]) => {
+      .then(([prof, str, hist, tod, wi, radarRes, emRes, mrRes, paRes, wlRes]) => {
         if (cancelled) return
         setProfile(prof)
         setStreak(str)
@@ -88,6 +103,9 @@ export default function DashboardPage() {
         setWeeklyInsight(wi)
         setRadar(radarRes)
         setEnergyMood(emRes?.data ?? [])
+        setMemoryRecall(mrRes)
+        setPatternAlertData(paRes)
+        setWeeklyLetter(wlRes)
         if (tod?.morning?.mood_state) {
           setMood(tod.morning.mood_state as MoodState)
         }
@@ -169,6 +187,25 @@ export default function DashboardPage() {
             todayCompleted={streak?.today_completed ?? false}
           />
         </div>
+
+        {/* ── Memory Recall (9.1) ── */}
+        {memoryRecall?.available && memoryRecall.match && (
+          <MemoryRecallCard match={memoryRecall.match} />
+        )}
+
+        {/* ── Weekly Letter (9.3) ── */}
+        {weeklyLetter?.available && weeklyLetter.letter && (
+          <WeeklyLetterCard
+            letter={weeklyLetter.letter}
+            sundayDate={weeklyLetter.sunday_date}
+            archive={weeklyLetter.archive ?? []}
+          />
+        )}
+
+        {/* ── Pattern Alert Indicator (9.2) ── */}
+        {patternAlertData?.active && patternAlertData.alert && (
+          <PatternAlertIndicator alert={patternAlertData.alert} />
+        )}
 
         {/* ── Quick Stats (STT 19) ── */}
         <QuickStats
@@ -1274,6 +1311,363 @@ function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
       >
         Trục X = mood (tệ → tốt) · Trục Y = energy (1–10)
       </p>
+    </div>
+  )
+}
+
+// ── Pattern Alert Indicator (9.2) ─────────────────────────────
+
+const PATTERN_MESSAGES: Record<string, string> = {
+  shame_spiral:
+    'AURA nh\u1EADn th\u1EA5y b\u1EA1n \u0111ang t\u1EF1 ch\u1EC9 tr\u00EDch nhi\u1EC1u ng\u00E0y li\u00EAn t\u1EE5c. Tu\u1EA7n n\u00E0y AURA s\u1EBD \u01B0u ti\u00EAn self-compassion cho b\u1EA1n.',
+  learned_helplessness:
+    'AURA nh\u1EADn th\u1EA5y n\u0103ng l\u01B0\u1EE3ng c\u1EE7a b\u1EA1n \u0111ang r\u1EA5t th\u1EA5p nhi\u1EC1u ng\u00E0y. AURA s\u1EBD nh\u1EB9 nh\u00E0ng h\u01A1n v\u1EDBi b\u1EA1n tu\u1EA7n n\u00E0y.',
+  avoidance_loop:
+    'B\u1EA1n \u0111\u00E3 v\u1EAFng m\u1EB7t m\u1ED9t th\u1EDDi gian. Kh\u00F4ng sao c\u1EA3 \u2014 AURA \u0111ang \u01B0u ti\u00EAn s\u1EF1 d\u1ECBu d\u00E0ng \u0111\u1EC3 \u0111\u00F3n b\u1EA1n tr\u1EDF l\u1EA1i.',
+}
+
+function PatternAlertIndicator({
+  alert,
+}: {
+  alert: { pattern_name: string; severity: string; consecutive_days: number }
+}) {
+  const message =
+    PATTERN_MESSAGES[alert.pattern_name] ??
+    `AURA \u0111ang \u01B0u ti\u00EAn self-compassion cho b\u1EA1n tu\u1EA7n n\u00E0y.`
+
+  return (
+    <div
+      className="glass-card anim-fade-in"
+      style={{
+        padding: 20,
+        borderLeft: '2px solid var(--mood-color-soft, #b388ff)',
+        background: 'var(--bg-elevated)',
+      }}
+    >
+      <p
+        style={{
+          margin: '0 0 8px',
+          fontSize: '0.65rem',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        AURA care mode
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: '0.92rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.6,
+        }}
+      >
+        {message}
+      </p>
+    </div>
+  )
+}
+
+// ── Weekly Letter Card (9.3) ─────────────────────────────────
+
+const SIGNATURE_LABELS: Record<string, string> = {
+  warm: 'Ấm áp',
+  proud: 'Tự hào',
+  gentle: 'Dịu dàng',
+  honest: 'Chân thành',
+  hopeful: 'Hy vọng',
+}
+
+function WeeklyLetterCard({
+  letter,
+  sundayDate,
+  archive,
+}: {
+  letter: { letter_title: string; letter_body: string; signature_mood: string; read: boolean }
+  sundayDate?: string
+  archive: WeeklyLetterArchiveItem[]
+}) {
+  const [expanded, setExpanded] = useState(!letter.read)
+  const [showArchive, setShowArchive] = useState(false)
+  const [markedRead, setMarkedRead] = useState(letter.read)
+
+  const handleMarkRead = () => {
+    if (!markedRead) {
+      markWeeklyLetterRead(sundayDate).catch(() => {})
+      setMarkedRead(true)
+    }
+  }
+
+  // Auto-mark as read when user expands
+  useEffect(() => {
+    if (expanded && !markedRead) {
+      handleMarkRead()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded])
+
+  const oldLetters = archive.filter((a) => a.date !== sundayDate)
+
+  return (
+    <div
+      className="glass-card anim-fade-in-scale"
+      style={{
+        padding: 0,
+        overflow: 'hidden',
+        borderLeft: '2px solid var(--mood-color)',
+      }}
+    >
+      {/* Header — always visible */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        style={{
+          width: '100%',
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <div>
+          <p
+            style={{
+              margin: '0 0 4px',
+              fontSize: '0.65rem',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--text-tertiary)',
+            }}
+          >
+            {!markedRead && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: 'var(--mood-color)',
+                  marginRight: 8,
+                  verticalAlign: 'middle',
+                }}
+              />
+            )}
+            Thư tuần này
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              fontFamily: 'var(--font-heading, Sora, system-ui)',
+              color: 'var(--text-primary)',
+              lineHeight: 1.4,
+            }}
+          >
+            {letter.letter_title}
+          </p>
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          style={{
+            flexShrink: 0,
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          <path
+            d="M5 8l5 5 5-5"
+            stroke="var(--text-tertiary)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {/* Letter body — collapsible */}
+      {expanded && (
+        <div
+          className="anim-fade-in"
+          style={{
+            padding: '0 24px 24px',
+            maxWidth: 560,
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.94rem',
+              color: 'var(--text-primary)',
+              lineHeight: 1.85,
+              fontFamily: 'var(--font-body, "DM Sans", system-ui)',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {letter.letter_body}
+          </div>
+          <div
+            style={{
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: '1px solid var(--border-default)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.76rem',
+                color: 'var(--text-tertiary)',
+                fontStyle: 'italic',
+              }}
+            >
+              — AURA, {SIGNATURE_LABELS[letter.signature_mood] ?? letter.signature_mood}
+            </span>
+            {oldLetters.length > 0 && (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setShowArchive((v) => !v)}
+                style={{
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  padding: '6px 14px',
+                  fontSize: '0.72rem',
+                }}
+              >
+                {showArchive ? 'Ẩn thư cũ' : `Xem ${oldLetters.length} thư cũ`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Archive — collapsible */}
+      {expanded && showArchive && oldLetters.length > 0 && (
+        <div
+          className="anim-fade-in"
+          style={{
+            padding: '0 24px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {oldLetters.map((item) => (
+            <ArchiveLetterItem key={item.date} item={item} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ArchiveLetterItem({ item }: { item: WeeklyLetterArchiveItem }) {
+  const [open, setOpen] = useState(false)
+
+  const dateLabel = (() => {
+    try {
+      return new Date(item.date + 'T00:00:00').toLocaleDateString('vi-VN', {
+        day: 'numeric',
+        month: 'long',
+      })
+    } catch {
+      return item.date
+    }
+  })()
+
+  return (
+    <div
+      style={{
+        borderTop: '1px solid var(--border-default)',
+        paddingTop: 12,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          padding: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+            {dateLabel}
+          </span>
+          <p
+            style={{
+              margin: '2px 0 0',
+              fontSize: '0.88rem',
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+            }}
+          >
+            {item.letter_title}
+          </p>
+        </div>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          style={{
+            flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'rotate(0)',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          <path
+            d="M4 6l4 4 4-4"
+            stroke="var(--text-tertiary)"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div
+          className="anim-fade-in"
+          style={{
+            marginTop: 8,
+            fontSize: '0.88rem',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.8,
+            whiteSpace: 'pre-wrap',
+            maxWidth: 560,
+          }}
+        >
+          {item.letter_body}
+          <p
+            style={{
+              margin: '12px 0 0',
+              fontSize: '0.72rem',
+              color: 'var(--text-tertiary)',
+              fontStyle: 'italic',
+            }}
+          >
+            — AURA, {SIGNATURE_LABELS[item.signature_mood] ?? item.signature_mood}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
