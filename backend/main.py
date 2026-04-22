@@ -1,8 +1,8 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.database import init_db
 from routers.api import router as api_router
-from routers.auth import router as auth_router
 
 app = FastAPI(
     title="AURA Backend",
@@ -10,21 +10,18 @@ app = FastAPI(
     description="AI Life Coach — 4-agent pipeline for daily wellness coaching",
 )
 
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
-
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:80,http://localhost"
+).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:80", "http://localhost"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
 app.include_router(api_router)
 
 

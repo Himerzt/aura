@@ -8,32 +8,6 @@ import type {
   UserProfile,
 } from './types'
 
-// ── Auth ────────────────────────────────────────────────────────────────────
-
-export interface AuthResponse {
-  success: boolean
-  token?: string
-  user?: { id: string; name: string; email: string }
-}
-
-export function postLogin(email: string, password: string): Promise<AuthResponse> {
-  return json<AuthResponse>('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  })
-}
-
-export function postRegister(
-  name: string,
-  email: string,
-  password: string,
-): Promise<AuthResponse> {
-  return json<AuthResponse>('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ name, email, password }),
-  })
-}
-
 // ── Core fetch helper ───────────────────────────────────────────────────────
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
