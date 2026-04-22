@@ -236,6 +236,14 @@ export default function DashboardPage() {
             />
           )}
         </FadeIn>
+        <FadeIn show={extrasReady && !weeklyLetter?.available}>
+          <div className="glass-card" style={{ padding: 24 }}>
+            <SectionLabel>Thư tuần</SectionLabel>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              Cuối tuần đầu tiên, AURA sẽ viết thư cho bạn.
+            </p>
+          </div>
+        </FadeIn>
 
         {/* ── Pattern Alert Indicator (9.2) — P2 ── */}
         <FadeIn show={historyReady && !!patternAlertData?.active && !!patternAlertData.alert}>
@@ -399,7 +407,7 @@ function QuickStats({
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-      <StatCard label="Ngày" value={`#${streakDay}`} />
+      <StatCard label="Ngày" value={streakDay > 0 ? `#${streakDay}` : '#1'} />
       <StatCard
         label="Tasks hôm nay"
         value={todayTasksTotal > 0 ? `${todayTasksDone}/${todayTasksTotal}` : '—'}
@@ -481,23 +489,30 @@ function getMoodTrend(history: HistoryDay[]): string {
 
 function MoodChart7Days({ history }: { history: HistoryDay[] }) {
   const last7 = getLast7Days(history)
+  const hasData = last7.some((d) => d.energy > 0)
 
   return (
     <div className="glass-card" style={{ padding: 24 }}>
       <SectionLabel>Mood 7 ngày qua</SectionLabel>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: 8,
-          height: 120,
-          marginTop: 12,
-        }}
-      >
-        {last7.map((day) => (
-          <MoodBar key={day.label} day={day} />
-        ))}
-      </div>
+      {hasData ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 8,
+            height: 120,
+            marginTop: 12,
+          }}
+        >
+          {last7.map((day) => (
+            <MoodBar key={day.label} day={day} />
+          ))}
+        </div>
+      ) : (
+        <p style={{ margin: '12px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          Sau vài ngày, pattern cảm xúc sẽ hiện ở đây.
+        </p>
+      )}
     </div>
   )
 }
@@ -596,6 +611,17 @@ function DaysWithIntention({ history }: { history: HistoryDay[] }) {
   ).length
 
   const pct = Math.round((daysWithMorning / 30) * 100)
+
+  if (daysWithMorning === 0) {
+    return (
+      <div className="glass-card" style={{ padding: 24 }}>
+        <SectionLabel>Ngày có ý định (30 ngày)</SectionLabel>
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          Mỗi lần bạn check-in buổi sáng sẽ được đếm ở đây.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="glass-card" style={{ padding: 24 }}>
@@ -1143,8 +1169,8 @@ function PatternRadar({
     return (
       <div className="glass-card" style={{ padding: 24 }}>
         <SectionLabel>Framework radar ({days} ngày)</SectionLabel>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Chưa có dữ liệu framework trong {days} ngày qua.
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          Dần dần AURA sẽ nhận ra pattern của bạn.
         </p>
       </div>
     )
@@ -1293,8 +1319,8 @@ function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
     return (
       <div className="glass-card" style={{ padding: 24 }}>
         <SectionLabel>Năng lượng × Mood (7 ngày)</SectionLabel>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Cần ít nhất 2 ngày có dữ liệu mood + energy để vẽ biểu đồ.
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          Sau vài ngày check-in, biểu đồ năng lượng và cảm xúc sẽ hiện ở đây.
         </p>
       </div>
     )

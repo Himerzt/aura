@@ -99,18 +99,37 @@ export default function StreakDisplay({
     >
       {/* Streak number or first day message */}
       {isFirstDay ? (
-        <p
+        <div
           style={{
-            margin: 0,
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-xl, 1.25rem)',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 8,
+            animation: 'fadeInUp 0.6s ease both',
           }}
         >
-          Hôm nay là ngày đầu
-        </p>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-4xl, 2.25rem)',
+              fontWeight: 600,
+              color: 'var(--mood-color, var(--amber))',
+              lineHeight: 1,
+            }}
+          >
+            1
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm, 0.875rem)',
+              color: 'var(--text-secondary)',
+              fontWeight: 400,
+              paddingBottom: 4,
+            }}
+          >
+            ngày đầu tiên
+          </span>
+        </div>
       ) : (
         <div
           style={{
