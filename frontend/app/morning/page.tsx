@@ -337,7 +337,10 @@ export default function MorningPage() {
             <textarea
               className="input-underline"
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value.length <= 2000) setUserInput(e.target.value)
+              }}
+              maxLength={2000}
               placeholder="Viết tự do — mọi cảm xúc đều được chào đón..."
               rows={5}
               style={{
@@ -357,8 +360,11 @@ export default function MorningPage() {
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                {userInput.trim().length} ký tự
+              <span style={{
+                fontSize: '0.72rem',
+                color: userInput.length >= 1900 ? 'var(--mood-overwhelmed)' : 'var(--text-tertiary)',
+              }}>
+                {userInput.length}/2000
               </span>
               <button
                 type="button"

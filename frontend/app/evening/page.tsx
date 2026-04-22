@@ -451,7 +451,10 @@ function GuidedReflection({
         <textarea
           className="input-underline"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            if (e.target.value.length <= 2000) onChange(e.target.value)
+          }}
+          maxLength={2000}
           disabled={disabled}
           placeholder="Hôm nay bạn học được gì về chính mình?"
           rows={5}
@@ -466,8 +469,12 @@ function GuidedReflection({
             background: 'transparent',
           }}
         />
-        <p style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-          {value.trim().length} ký tự
+        <p style={{
+          marginTop: 8,
+          fontSize: '0.72rem',
+          color: value.length >= 1900 ? 'var(--mood-overwhelmed)' : 'var(--text-tertiary)',
+        }}>
+          {value.length}/2000
         </p>
       </div>
     )
