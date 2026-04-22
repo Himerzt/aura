@@ -380,37 +380,7 @@ export default function MorningPage() {
         )}
 
         {/* Loading state */}
-        {loading && (
-          <div
-            className="glass-card anim-fade-in"
-            style={{
-              padding: 48,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 24,
-            }}
-          >
-            <div className="anim-breathe">
-              <MoodOrb mood="stable" size={120} energy={5} />
-            </div>
-            <p
-              style={{
-                color: 'var(--text-secondary)',
-                fontSize: '0.95rem',
-                textAlign: 'center',
-                margin: 0,
-              }}
-            >
-              AURA đang lắng nghe và suy ngẫm...
-            </p>
-            <div style={{ display: 'inline-flex', gap: 6 }}>
-              <span className="typing-dot" style={{ animationDelay: '0ms' }} />
-              <span className="typing-dot" style={{ animationDelay: '160ms' }} />
-              <span className="typing-dot" style={{ animationDelay: '320ms' }} />
-            </div>
-          </div>
-        )}
+        {loading && <ProgressLoader />}
 
         {/* Bad-day interstitial — shown before result when mood is bad */}
         {result && result.type === 'morning' && badDayMsg && !badDayDismissed && (
@@ -440,6 +410,66 @@ export default function MorningPage() {
             }}
           />
         )}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Perceived-progress loader (replaces static typing dots)
+// ──────────────────────────────────────────────────────────────────────────────
+
+const PROGRESS_MESSAGES = [
+  'Đang đọc cảm xúc của bạn...',
+  'Tìm pattern tâm lý phù hợp...',
+  'Chuẩn bị task cho hôm nay...',
+]
+
+function ProgressLoader() {
+  const [index, setIndex] = useState(0)
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % PROGRESS_MESSAGES.length)
+        setVisible(true)
+      }, 500)
+    }, 4000)
+    return () => clearInterval(iv)
+  }, [])
+
+  return (
+    <div
+      className="glass-card anim-fade-in"
+      style={{
+        padding: 48,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 24,
+      }}
+    >
+      <div className="anim-breathe">
+        <MoodOrb mood="stable" size={120} energy={5} />
+      </div>
+      <p
+        style={{
+          color: 'var(--text-secondary)',
+          fontSize: '0.95rem',
+          textAlign: 'center',
+          margin: 0,
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.5s ease',
+        }}
+      >
+        {PROGRESS_MESSAGES[index]}
+      </p>
+      <div style={{ display: 'inline-flex', gap: 6 }}>
+        <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+        <span className="typing-dot" style={{ animationDelay: '160ms' }} />
+        <span className="typing-dot" style={{ animationDelay: '320ms' }} />
       </div>
     </div>
   )
