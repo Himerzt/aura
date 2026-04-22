@@ -57,13 +57,13 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
   )
 }
 
-const AUTH_ROUTES = ['/login', '/register']
+const HIDDEN_ROUTES = ['/onboarding']
 
 export default function Navigation() {
   const pathname = usePathname()
 
   // Hide navigation on auth pages for a clean standalone experience
-  if (AUTH_ROUTES.includes(pathname ?? '')) return null
+  if (HIDDEN_ROUTES.includes(pathname ?? '')) return null
 
   return (
     <>
