@@ -31,7 +31,7 @@ import StreakDisplay from '@/components/aura/StreakDisplay'
 import MilestoneToast from '@/components/aura/MilestoneToast'
 import MemoryRecallCard from '@/components/aura/MemoryRecallCard'
 import ErrorCard from '@/components/ui/ErrorCard'
-import { DashboardSkeleton } from '@/components/ui/Skeleton'
+// DashboardSkeleton removed — using per-section SectionSkeleton instead
 import type { DayEntry, MoodState, UserProfile, StreakInfo } from '@/lib/types'
 
 // ── History entry as returned by GET /api/history ──
@@ -65,7 +65,10 @@ function getGreeting(): string {
 export default function DashboardPage() {
   const router = useRouter()
   const { setMood } = useMood()
-  const [loading, setLoading] = useState(true)
+  // Progressive loading: 3 priority groups
+  const [coreReady, setCoreReady] = useState(false)
+  const [historyReady, setHistoryReady] = useState(false)
+  const [extrasReady, setExtrasReady] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -84,59 +87,69 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    setCoreReady(false)
+    setHistoryReady(false)
+    setExtrasReady(false)
     setError(null)
 
-    Promise.all([
-      getProfile(),
-      getStreak(),
-      getHistory() as Promise<HistoryDay[]>,
-      getToday(),
-      getWeeklyInsight(),
-      getPatternRadar(30).catch(() => null),
-      getEnergyMoodMatrix().catch(() => ({ data: [] as EnergyMoodPoint[] })),
-      getMemoryRecall().catch(() => null),
-      getPatternAlert().catch(() => null),
-      getWeeklyLetter().catch(() => null),
-      getBadDayMessages().catch(() => ({ messages: [] as BadDayMessageEntry[] })),
-    ])
-      .then(([prof, str, hist, tod, wi, radarRes, emRes, mrRes, paRes, wlRes, bdmRes]) => {
+    // P1 — greeting, streak, quick stats, CTAs (fastest, most visible)
+    Promise.all([getProfile(), getStreak(), getToday()])
+      .then(([prof, str, tod]) => {
         if (cancelled) return
         setProfile(prof)
         setStreak(str)
-        setHistory(hist)
         setToday(tod)
-        setWeeklyInsight(wi)
-        setRadar(radarRes)
-        setEnergyMood(emRes?.data ?? [])
-        setMemoryRecall(mrRes)
-        setPatternAlertData(paRes)
-        setWeeklyLetter(wlRes)
-        setBadDayMessages(bdmRes?.messages ?? [])
         if (tod?.morning?.mood_state) {
           setMood(tod.morning.mood_state as MoodState)
         }
+        setCoreReady(true)
       })
       .catch((e) => {
-        if (cancelled) return
-        setError(e)
+        if (!cancelled) setError(e)
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+
+    // P2 — history-dependent sections + lightweight lookups
+    Promise.all([
+      getHistory() as Promise<HistoryDay[]>,
+      getMemoryRecall().catch(() => null),
+      getPatternAlert().catch(() => null),
+      getBadDayMessages().catch(() => ({ messages: [] as BadDayMessageEntry[] })),
+    ])
+      .then(([hist, mrRes, paRes, bdmRes]) => {
+        if (cancelled) return
+        setHistory(hist)
+        setMemoryRecall(mrRes)
+        setPatternAlertData(paRes)
+        setBadDayMessages(bdmRes?.messages ?? [])
+        setHistoryReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryReady(true) // degrade gracefully
+      })
+
+    // P3 — heavier analytics + weekly content
+    Promise.all([
+      getWeeklyInsight(),
+      getPatternRadar(30).catch(() => null),
+      getEnergyMoodMatrix().catch(() => ({ data: [] as EnergyMoodPoint[] })),
+      getWeeklyLetter().catch(() => null),
+    ])
+      .then(([wi, radarRes, emRes, wlRes]) => {
+        if (cancelled) return
+        setWeeklyInsight(wi)
+        setRadar(radarRes)
+        setEnergyMood(emRes?.data ?? [])
+        setWeeklyLetter(wlRes)
+        setExtrasReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setExtrasReady(true) // degrade gracefully
       })
 
     return () => { cancelled = true }
   }, [setMood, reloadKey])
 
-  if (loading) {
-    return (
-      <PageShell>
-        <DashboardSkeleton />
-      </PageShell>
-    )
-  }
-
-  if (error) {
+  if (error && !coreReady) {
     return (
       <PageShell>
         <ErrorCard error={error} onRetry={() => setReloadKey((k) => k + 1)} />
@@ -150,108 +163,149 @@ export default function DashboardPage() {
 
   return (
     <PageShell>
-      {/* ── Milestone celebration toast ── */}
-      <MilestoneToast streak={streak?.current_streak ?? 0} />
-
-      {/* ── Greeting (STT 17) ── */}
-      <header className="anim-fade-in-up" style={{ textAlign: 'center', marginBottom: 32 }}>
-        <p
-          style={{
-            margin: 0,
-            fontSize: '0.72rem',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-          }}
-        >
-          {getGreeting()}
-        </p>
-        <h1
-          className="gradient-text"
-          style={{
-            margin: '6px 0 4px',
-            fontFamily: 'var(--font-heading, Sora, system-ui)',
-            fontSize: '1.8rem',
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-          }}
-        >
-          {profile?.name || 'AURA'}
-        </h1>
-        {profile?.goal && (
-          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            {profile.goal}
-          </p>
-        )}
-      </header>
-
-      <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {/* ── Streak (STT 18) ── */}
-        <div className="glass-card" style={{ padding: 24, display: 'flex', justifyContent: 'center' }}>
-          <StreakDisplay
-            currentStreak={streak?.current_streak ?? 0}
-            shieldCount={streak?.shield_count ?? 0}
-            todayCompleted={streak?.today_completed ?? false}
-          />
+      {/* ── P1: Greeting + Streak + Quick Stats ── */}
+      {!coreReady ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <SectionSkeleton height={100} />
+          <SectionSkeleton height={80} />
+          <SectionSkeleton height={72} />
         </div>
+      ) : (
+        <>
+          <MilestoneToast streak={streak?.current_streak ?? 0} />
 
-        {/* ── Memory Recall (9.1) ── */}
-        {memoryRecall?.available && memoryRecall.match && (
-          <MemoryRecallCard match={memoryRecall.match} />
-        )}
+          <header className="anim-fade-in-up" style={{ textAlign: 'center', marginBottom: 32 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.72rem',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              {getGreeting()}
+            </p>
+            <h1
+              className="gradient-text"
+              style={{
+                margin: '6px 0 4px',
+                fontFamily: 'var(--font-heading, Sora, system-ui)',
+                fontSize: '1.8rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {profile?.name || 'AURA'}
+            </h1>
+            {profile?.goal && (
+              <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                {profile.goal}
+              </p>
+            )}
+          </header>
+        </>
+      )}
 
-        {/* ── Weekly Letter (9.3) ── */}
-        {weeklyLetter?.available && weeklyLetter.letter && (
-          <WeeklyLetterCard
-            letter={weeklyLetter.letter}
-            sundayDate={weeklyLetter.sunday_date}
-            archive={weeklyLetter.archive ?? []}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* ── Streak (STT 18) — P1 ── */}
+        <FadeIn show={coreReady}>
+          <div className="glass-card" style={{ padding: 24, display: 'flex', justifyContent: 'center' }}>
+            <StreakDisplay
+              currentStreak={streak?.current_streak ?? 0}
+              shieldCount={streak?.shield_count ?? 0}
+              todayCompleted={streak?.today_completed ?? false}
+            />
+          </div>
+        </FadeIn>
+
+        {/* ── Memory Recall (9.1) — P2 ── */}
+        {!historyReady && <SectionSkeleton height={80} />}
+        <FadeIn show={historyReady && !!memoryRecall?.available && !!memoryRecall.match}>
+          {memoryRecall?.match && <MemoryRecallCard match={memoryRecall.match} />}
+        </FadeIn>
+
+        {/* ── Weekly Letter (9.3) — P3 ── */}
+        {!extrasReady && <SectionSkeleton height={100} />}
+        <FadeIn show={extrasReady && !!weeklyLetter?.available && !!weeklyLetter.letter}>
+          {weeklyLetter?.letter && (
+            <WeeklyLetterCard
+              letter={weeklyLetter.letter}
+              sundayDate={weeklyLetter.sunday_date}
+              archive={weeklyLetter.archive ?? []}
+            />
+          )}
+        </FadeIn>
+
+        {/* ── Pattern Alert Indicator (9.2) — P2 ── */}
+        <FadeIn show={historyReady && !!patternAlertData?.active && !!patternAlertData.alert}>
+          {patternAlertData?.alert && <PatternAlertIndicator alert={patternAlertData.alert} />}
+        </FadeIn>
+
+        {/* ── Quick Stats (STT 19) — P1 core + P2 history ── */}
+        <FadeIn show={coreReady}>
+          <QuickStats
+            streakDay={streak?.current_streak ?? 0}
+            todayTasksDone={todayDone}
+            todayTasksTotal={todayTasks.length}
+            todayMood={todayMood}
+            history={history}
           />
+        </FadeIn>
+
+        {/* ── 7-Day Mood Chart (STT 20) — P2 ── */}
+        {!historyReady ? (
+          <SectionSkeleton height={160} />
+        ) : (
+          <FadeIn show={historyReady}>
+            <MoodChart7Days history={history} />
+          </FadeIn>
         )}
 
-        {/* ── Pattern Alert Indicator (9.2) ── */}
-        {patternAlertData?.active && patternAlertData.alert && (
-          <PatternAlertIndicator alert={patternAlertData.alert} />
+        {/* ── First-action insight (Phần 8E) — P2 ── */}
+        <FadeIn show={historyReady}>
+          <FirstActionInsight history={history} />
+        </FadeIn>
+
+        {/* ── Framework diversity warning (Phần 8E) — P2 ── */}
+        <FadeIn show={historyReady}>
+          <FrameworkDiversityWarning history={history} />
+        </FadeIn>
+
+        {/* ── Pattern radar 30d (Phần 8E) — P3 ── */}
+        {!extrasReady ? (
+          <SectionSkeleton height={300} />
+        ) : (
+          <FadeIn show={extrasReady && !!radar}>
+            {radar && <PatternRadar counts={radar.counts} days={radar.days} />}
+          </FadeIn>
         )}
 
-        {/* ── Quick Stats (STT 19) ── */}
-        <QuickStats
-          streakDay={streak?.current_streak ?? 0}
-          todayTasksDone={todayDone}
-          todayTasksTotal={todayTasks.length}
-          todayMood={todayMood}
-          history={history}
-        />
+        {/* ── Energy × mood scatter (Phần 8E) — P3 ── */}
+        <FadeIn show={extrasReady}>
+          <EnergyMoodScatter points={energyMood} />
+        </FadeIn>
 
-        {/* ── 7-Day Mood Chart (STT 20) ── */}
-        <MoodChart7Days history={history} />
+        {/* ── Why-today Card (STT 23) — P1 + P2 ── */}
+        <FadeIn show={coreReady}>
+          <WhyTodayCard goal={profile?.goal} history={history} />
+        </FadeIn>
 
-        {/* ── First-action insight (Phần 8E) ── */}
-        <FirstActionInsight history={history} />
+        {/* ── Anti-streak: Days with intention (STT 24) — P2 ── */}
+        <FadeIn show={historyReady}>
+          <DaysWithIntention history={history} />
+        </FadeIn>
 
-        {/* ── Framework diversity warning (Phần 8E) ── */}
-        <FrameworkDiversityWarning history={history} />
+        {/* ── Share card milestone (STT 25) — P1 ── */}
+        <FadeIn show={coreReady}>
+          <MilestoneShareCard
+            streak={streak?.current_streak ?? 0}
+            name={profile?.name || 'AURA User'}
+          />
+        </FadeIn>
 
-        {/* ── Pattern radar 30d (Phần 8E) ── */}
-        {radar && <PatternRadar counts={radar.counts} days={radar.days} />}
-
-        {/* ── Energy × mood scatter (Phần 8E) ── */}
-        <EnergyMoodScatter points={energyMood} />
-
-        {/* ── Why-today Card (STT 23) ── */}
-        <WhyTodayCard goal={profile?.goal} history={history} />
-
-        {/* ── Anti-streak: Days with intention (STT 24) ── */}
-        <DaysWithIntention history={history} />
-
-        {/* ── Share card milestone (STT 25) ── */}
-        <MilestoneShareCard
-          streak={streak?.current_streak ?? 0}
-          name={profile?.name || 'AURA User'}
-        />
-
-        {/* ── Bad-Day Rehearsal suggestion (9.4) ── */}
-        {(todayMood === 'stable' || todayMood === 'energized') && !badDaySaved && (
+        {/* ── Bad-Day Rehearsal suggestion (9.4) — P2 ── */}
+        <FadeIn show={historyReady && (todayMood === 'stable' || todayMood === 'energized') && !badDaySaved}>
           <BadDayRehearsalPrompt
             existingCount={badDayMessages.length}
             onSave={(msg) => {
@@ -263,19 +317,46 @@ export default function DashboardPage() {
                 .catch(() => {})
             }}
           />
-        )}
+        </FadeIn>
 
-        {/* ── CTA Buttons (STT 21) ── */}
-        <CTAButtons
-          hasMorning={!!today?.morning}
-          hasEvening={!!today?.evening}
-          router={router}
-        />
+        {/* ── CTA Buttons (STT 21) — P1 ── */}
+        <FadeIn show={coreReady}>
+          <CTAButtons
+            hasMorning={!!today?.morning}
+            hasEvening={!!today?.evening}
+            router={router}
+          />
+        </FadeIn>
 
-        {/* ── Weekly Insight (STT 22) ── */}
-        <WeeklyInsightCard data={weeklyInsight} />
+        {/* ── Weekly Insight (STT 22) — P3 ── */}
+        <FadeIn show={extrasReady}>
+          <WeeklyInsightCard data={weeklyInsight} />
+        </FadeIn>
       </div>
     </PageShell>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Helpers — progressive loading
+// ═══════════════════════════════════════════════════════════════
+
+function FadeIn({ show, children }: { show: boolean; children: React.ReactNode }) {
+  if (!show) return null
+  return (
+    <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
+      {children}
+    </div>
+  )
+}
+
+function SectionSkeleton({ height = 120 }: { height?: number }) {
+  return (
+    <div
+      className="glass-card skeleton"
+      style={{ height, borderRadius: 16 }}
+      aria-hidden
+    />
   )
 }
 
