@@ -12,7 +12,7 @@ Dùng lệnh này ĐẦU MỖI PHIÊN LÀM VIỆC để nạp context đúng cá
 
 **Dự án:** AURA — AI life coach với 4-agent pipeline
 
-**Tech stack:** Next.js 15 + FastAPI + Gemini + SQLite + Docker + Nginx
+**Tech stack:** Next.js 15 + FastAPI + Gemini + JSON files + Docker + Nginx
 
 **Tiến độ:**
 - ✅ Phần [X]: [tên] — đã xong

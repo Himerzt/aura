@@ -12,7 +12,13 @@ AURA là AI life coach cá nhân hóa cho người 20–35 tuổi đang stuck, b
 
 **Khác biệt cốt lõi:** Không phải chatbot motivational. AURA nhận diện pattern tâm lý cụ thể (learned helplessness, shame spiral, analysis paralysis...) rồi chọn đúng framework can thiệp — mỗi ngày khác nhau tùy trạng thái thực tế của người dùng.
 
-**Build mới hoàn toàn.** Không tái sử dụng code cũ.
+**Trạng thái hiện tại:** MVP hoàn thành (Phần 1–10). Đang trong tuần polish để demo portfolio cho phỏng vấn.
+
+**Quyết định kiến trúc quan trọng (2026-04-22):**
+- **Single-user MVP** — không có auth, không có multi-user. Đây là quyết định có chủ đích, không phải thiếu sót.
+- **Auth đã được gỡ bỏ** — JWT/login/register từ Phần 10 đã remove. Lý do: auth không enforce trên API routes = ảo giác bảo mật, nguy hiểm hơn không có.
+- **Data layer: JSON files** — profile.json + history.json. SQLite schema (accounts, users, daily_entries, tasks) đã remove vì không được sử dụng.
+- **Multi-user + auth là roadmap v2**, không phải MVP.
 
 ---
 
@@ -23,14 +29,16 @@ AURA là AI life coach cá nhân hóa cho người 20–35 tuổi đang stuck, b
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS | port 3000 |
 | Backend | FastAPI (Python 3.12) | port 8000 |
 | AI Engine | Google Gemini 3.1 Flash Lite (preview) | via `google-genai` SDK |
-| Database | SQLite với WAL mode | stdlib `sqlite3`, tự init khi start |
-| Container | Docker Compose (backend + frontend) | 1 lệnh khởi động |
-| Reverse Proxy | Nginx | user truy cập 1 port duy nhất: localhost:80 |
+| Data Storage | JSON files (profile.json + history.json) | Single-user, trong backend/data/ |
+| Container | Docker Compose (backend + frontend + nginx) | 1 lệnh khởi động |
+| Reverse Proxy | Nginx | user truy cập localhost:80 |
+| Deployment | Railway (2 services: backend + frontend) | Không dùng Nginx khi deploy |
 
 ---
 
 ## 3. Kiến Trúc Hệ Thống
 
+### Local Development (Docker Compose)
 ```
 User (localhost:80)
         │
@@ -40,7 +48,19 @@ User (localhost:80)
     /*      ──► Next.js :3000
 ```
 
-**Backend pipeline 4 agent (buổi sáng):**
+### Production (Railway)
+```
+User
+  ├──► Frontend (Railway service) :3000
+  │        │ fetch(NEXT_PUBLIC_API_URL)
+  │        ▼
+  └──► Backend (Railway service) :8000
+           │ CORS: ALLOWED_ORIGINS env var
+           ▼
+       Gemini API
+```
+
+### Backend pipeline 4 agent (buổi sáng)
 ```
 user_input
     │
@@ -48,6 +68,9 @@ user_input
 Agent 1: Wellness Check      → mood_state, energy_level, risk_flag
     │
     ├─ risk_flag=true ──► Crisis Support Mode (dừng pipeline)
+    │
+    ├─ Pattern Alert check (shame spiral / learned helplessness / avoidance loop)
+    │   └─ có alert? → force_framework cho Agent 2
     │
     ▼
 Agent 2: Psychology Insight  → primary_pattern, framework, explanation (VI)
@@ -59,7 +82,7 @@ Agent 3: Task Generator      → tasks[] với Implementation Intention
 Lưu history.json + hiển thị UI
 ```
 
-**Backend pipeline buổi tối:**
+### Backend pipeline buổi tối
 ```
 user_reflection + completed_tasks
     │
@@ -70,7 +93,7 @@ Agent 4: Reflection          → summary, pattern_detected, tomorrow_question
 Cập nhật history.json
 ```
 
-**Backend pipeline hàng tuần (Chủ nhật):**
+### Backend pipeline hàng tuần (Chủ nhật)
 ```
 history_7_days + profile + patterns
     │
@@ -175,46 +198,45 @@ Agent 3 phải tuân thủ nghiêm ngặt:
 
 Nếu past_attempts có pattern bỏ cuộc với 1 loại task: tránh lặp lại, chọn approach khác.
 
+**Quan trọng:** Rule engine này PHẢI được enforce ở Python code (validate sau khi parse JSON từ Gemini), không chỉ trong prompt. LLM có thể vi phạm prompt rules.
+
 ---
 
-## 7. Folder Structure Target
+## 7. Folder Structure (Post-Polish)
 
 ```
 AURA_NEW/
 ├── CLAUDE.md                     ← file này
 ├── .env                          ← GEMINI_API_KEY (không commit)
-├── .env.example
+├── .env.example                  ← template env vars cho người clone
 ├── .gitignore
 ├── .gitattributes
-├── LICENSE
-├── README.md
-├── AURA_HUONG_DAN_TOAN_BO.md
+├── README.md                     ← case study format (tiếng Anh)
 ├── docker-compose.yml
 ├── nginx/
 │   └── nginx.conf
-├── scripts/
-│   └── test-part6.sh
 │
 ├── .claude/
-│   ├── settings.json             ← Claude Code settings
-│   ├── agents/                   ← sub-agent definitions
+│   ├── settings.json
+│   ├── agents/
 │   │   ├── agent-tester.md
 │   │   ├── debug-helper.md
 │   │   ├── project-auditor.md
 │   │   ├── prompt-engineer.md
 │   │   ├── pr-reviewer.md
 │   │   └── ui-builder.md
-│   └── commands/                 ← slash commands tái sử dụng
-│       ├── start-session.md      ← /start-session
-│       ├── test-agent.md         ← /test-agent
-│       ├── commit.md             ← /commit
-│       └── debug.md              ← /debug
+│   └── commands/
+│       ├── start-session.md
+│       ├── test-agent.md
+│       ├── commit.md
+│       └── debug.md
 │
 ├── docs/
-│   ├── plan.md                   ← kế hoạch 8 phần
-│   ├── design-system.md          ← design tokens, component spec
-│   ├── api-spec.md               ← endpoint documentation
-│   └── test-plan-phan8-D-E.md
+│   ├── plan.md
+│   ├── design-system.md
+│   ├── api-spec.md
+│   ├── review/                   ← subagent review reports
+│   └── screenshots/              ← cho README
 │
 ├── backend/
 │   ├── Dockerfile
@@ -222,7 +244,7 @@ AURA_NEW/
 │   ├── main.py
 │   ├── agents/
 │   │   ├── __init__.py
-│   │   ├── _gemini.py            ← shared Gemini client helper
+│   │   ├── _gemini.py
 │   │   ├── wellness_check.py
 │   │   ├── psychology_insight.py
 │   │   ├── task_generator.py
@@ -230,41 +252,30 @@ AURA_NEW/
 │   │   └── weekly_letter.py
 │   ├── core/
 │   │   ├── __init__.py
-│   │   ├── memory.py
+│   │   ├── memory.py             ← JSON read/write (v2: migrate to SQLite)
 │   │   ├── memory_recall.py
 │   │   ├── pattern_alert.py
 │   │   ├── prompts.py
-│   │   ├── pipeline.py
-│   │   └── database.py
+│   │   └── pipeline.py
 │   ├── routers/
 │   │   ├── __init__.py
-│   │   └── api.py                ← all /api/* routes
+│   │   └── api.py
+│   ├── scripts/
+│   │   └── seed_demo.py          ← tạo 10 ngày demo data
 │   ├── tests/
 │   │   └── test_streak_shield.py
 │   └── data/
 │       ├── profile.json
-│       ├── history.json
-│       └── aura.db               ← SQLite (auto-generated, gitignored)
+│       └── history.json
 │
 └── frontend/
     ├── Dockerfile
     ├── package.json
-    ├── package-lock.json
     ├── tailwind.config.ts
-    ├── postcss.config.js
-    ├── tsconfig.json
-    ├── next.config.ts
-    ├── next-env.d.ts
-    ├── public/
-    │   ├── manifest.webmanifest   ← PWA manifest
-    │   ├── sw.js                  ← Service Worker
-    │   ├── icon-192.svg
-    │   └── icon-512.svg
     ├── app/
     │   ├── layout.tsx
-    │   ├── page.tsx
+    │   ├── page.tsx              ← redirect: chưa onboard → /onboarding, đã onboard → /morning
     │   ├── globals.css
-    │   ├── api/[...path]/         ← Next.js API proxy route
     │   ├── onboarding/page.tsx
     │   ├── morning/page.tsx
     │   ├── checklist/page.tsx
@@ -272,8 +283,7 @@ AURA_NEW/
     │   └── dashboard/page.tsx
     ├── components/
     │   ├── Navigation.tsx
-    │   ├── ServiceWorkerRegistrar.tsx
-    │   ├── ui/                   ← reusable primitives
+    │   ├── ui/
     │   │   ├── Badge.tsx
     │   │   ├── Button.tsx
     │   │   ├── Card.tsx
@@ -282,7 +292,7 @@ AURA_NEW/
     │   │   ├── LoadingSpinner.tsx
     │   │   ├── PageTransition.tsx
     │   │   └── Skeleton.tsx
-    │   └── aura/                 ← domain-specific components
+    │   └── aura/
     │       ├── EnergyBar.tsx
     │       ├── FrameworkTag.tsx
     │       ├── InsightCard.tsx
@@ -293,11 +303,17 @@ AURA_NEW/
     │       ├── SupportCard.tsx
     │       └── TaskCard.tsx
     └── lib/
-        ├── api.ts
+        ├── api.ts                ← API URL từ NEXT_PUBLIC_API_URL env var
         ├── types.ts
         ├── mood-context.tsx
         └── theme-context.tsx
 ```
+
+**Đã remove (từ Phần 10):**
+- `backend/core/database.py` — SQLite schema không dùng
+- `frontend/app/login/` — auth UI shell
+- `frontend/app/register/` — auth UI shell
+- `backend/data/aura.db` — SQLite database file
 
 ---
 
@@ -310,6 +326,8 @@ AURA_NEW/
 - Không hardcode API key — đọc từ environment variable
 - `risk_flag = true` → dừng pipeline, hiển thị SupportCard với đường dây hỗ trợ
 - Không shame user vì bỏ qua task — reframe như data
+- API URL frontend: đọc từ `NEXT_PUBLIC_API_URL` env var, KHÔNG hardcode localhost
+- CORS backend: đọc từ `ALLOWED_ORIGINS` env var, mặc định `http://localhost:3000`
 
 ---
 
@@ -409,4 +427,25 @@ Xem `.claude/commands/` để biết các slash command có sẵn:
 - `/commit` — commit đúng convention
 - `/debug` — debug workflow chuẩn
 
-**Quan trọng:** Mở chat mới sau mỗi 3 phần để tránh đầy context window.
+**Quy trình polish (tuần 22-29/04/2026):**
+1. Mở chat mới MỖI session (1 giờ/session, 3 session/ngày)
+2. Bắt đầu mỗi session: "Đọc CLAUDE.md. [Mô tả task cụ thể]."
+3. Commit sau MỖI session
+4. Không thêm feature mới — chỉ polish cái đang có
+5. Nếu kẹt > 30 phút 1 vấn đề: bỏ qua, ghi note, sang task tiếp
+6. Plan chi tiết 21 session: xem docs/plan-polish.md
+
+---
+
+## 11. Những Gì KHÔNG Cần Làm (v2 Roadmap)
+
+Để tránh scope creep trong tuần polish:
+- ❌ Auth / multi-user
+- ❌ SQLite migration
+- ❌ Push notification
+- ❌ Export PDF/CSV
+- ❌ Voice input
+- ❌ I18n (English toggle)
+- ❌ AI model fallback
+- ❌ Streaming response từ Gemini
+- ❌ Thêm test mới (42 tests hiện tại đủ cho MVP)

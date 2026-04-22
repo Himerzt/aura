@@ -1,3 +1,7 @@
+"""JSON-based data layer for single-user MVP.
+# v2: migrate to SQLite for multi-user support
+"""
+
 import json
 import os
 from datetime import date, datetime, timedelta

@@ -25,7 +25,7 @@ docker-compose up --build
 - **Frontend:** Next.js 15, TypeScript, Tailwind CSS
 - **Backend:** FastAPI (Python 3.12)
 - **AI:** Google Gemini 2.5 Flash
-- **Database:** SQLite
+- **Data:** JSON files (profile.json + history.json)
 - **Infrastructure:** Docker Compose + Nginx
 
 ## Cấu Trúc Dự Án
