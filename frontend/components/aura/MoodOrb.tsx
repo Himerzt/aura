@@ -1,5 +1,7 @@
 'use client'
 
+import Tooltip from '../ui/Tooltip'
+
 type MoodState = 'energized' | 'stable' | 'anxious' | 'overwhelmed' | 'numb'
 
 interface MoodOrbProps {
@@ -7,6 +9,14 @@ interface MoodOrbProps {
   size?: number
   animated?: boolean
   energy?: number // 1-10, controls glow intensity & pulse speed
+}
+
+const moodTooltips: Record<MoodState, string> = {
+  energized:   'Bạn đang tràn đầy năng lượng. AURA sẽ giao task thử thách hơn.',
+  stable:      'Trạng thái ổn định. AURA giữ nhịp đều cho bạn.',
+  anxious:     'Bạn đang lo âu. AURA sẽ chọn task nhẹ nhàng, dễ bắt đầu.',
+  overwhelmed: 'Bạn đang quá tải. AURA giảm task xuống mức tối thiểu.',
+  numb:        'Bạn đang cảm thấy tê liệt. AURA chỉ giao 1 việc rất nhỏ.',
 }
 
 const moodColors: Record<MoodState, { primary: string; glow: string }> = {
@@ -74,8 +84,10 @@ export default function MoodOrb({
   }
 
   return (
-    <div style={outerStyle} aria-label={`Mood: ${mood}, Energy: ${energy}`} role="img">
-      <div style={innerStyle} />
-    </div>
+    <Tooltip text={moodTooltips[mood]}>
+      <div style={outerStyle} aria-label={`Mood: ${mood}, Energy: ${energy}`} role="img">
+        <div style={innerStyle} />
+      </div>
+    </Tooltip>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import Tooltip from '../ui/Tooltip'
+
 interface EnergyBarProps {
   level: number
   showLabel?: boolean
@@ -31,17 +33,20 @@ export default function EnergyBar({
           }}
         >
           {showLabel && (
-            <span
-              style={{
-                fontSize: 'var(--text-xs, 0.75rem)',
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Năng lượng
-            </span>
+            <Tooltip text="Mức năng lượng bạn tự đánh giá. AURA dựa vào đây để chọn số lượng và độ khó task.">
+              <span
+                style={{
+                  fontSize: 'var(--text-xs, 0.75rem)',
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  borderBottom: '1px dotted var(--text-tertiary)',
+                }}
+              >
+                Năng lượng
+              </span>
+            </Tooltip>
           )}
           {showNumber && (
             <span

@@ -1,5 +1,7 @@
 'use client'
 
+import Tooltip from '../ui/Tooltip'
+
 type Framework =
   | '80_20_pareto'
   | 'behavioral_activation'
@@ -37,33 +39,49 @@ const frameworkDescriptions: Record<string, string> = {
   'dunning_kruger':           'Vượt qua thung lũng tuyệt vọng để tiến lên',
 }
 
+const frameworkTooltips: Record<string, string> = {
+  '80_20_pareto':             'AURA chọn framework này khi bạn có quá nhiều việc và chưa biết ưu tiên gì.',
+  'behavioral_activation':    'AURA chọn framework này khi bạn cảm thấy tê liệt, không muốn làm gì, hoặc đang chờ cảm hứng.',
+  'implementation_intention': 'AURA chọn framework này khi bạn biết cần làm gì nhưng hay quên hoặc trì hoãn.',
+  'habit_stacking':           'AURA chọn framework này khi bạn muốn tạo thói quen mới nhưng chưa tìm được chỗ trong lịch.',
+  'self_compassion':          'AURA chọn framework này khi bạn đang tự chỉ trích hoặc cảm thấy xấu hổ vì bỏ lỡ.',
+  'progress_principle':       'AURA chọn framework này khi bạn mất động lực vì không thấy mình tiến lên.',
+  'two_minute_rule':          'AURA chọn framework này khi bạn biết việc cần làm nhưng không bắt đầu được.',
+  'dunning_kruger':           'AURA chọn framework này khi bạn đang ở thung lũng tuyệt vọng hoặc quá tự tin.',
+}
+
 export default function FrameworkTag({
   framework,
   showDescription = false,
 }: FrameworkTagProps) {
   const label = frameworkLabels[framework] ?? framework
   const description = frameworkDescriptions[framework]
+  const tooltip = frameworkTooltips[framework]
+
+  const tag = (
+    <span
+      style={{
+        display: 'inline-block',
+        background: 'var(--ice-dim)',
+        color: 'var(--ice)',
+        border: '1px solid rgba(168,196,224,0.2)',
+        borderRadius: 999,
+        padding: '4px 12px',
+        fontSize: '0.7rem',
+        fontFamily: 'var(--font-body)',
+        fontWeight: 500,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  )
 
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 4 }}>
-      <span
-        style={{
-          display: 'inline-block',
-          background: 'var(--ice-dim)',
-          color: 'var(--ice)',
-          border: '1px solid rgba(168,196,224,0.2)',
-          borderRadius: 999,
-          padding: '4px 12px',
-          fontSize: '0.7rem',
-          fontFamily: 'var(--font-body)',
-          fontWeight: 500,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {label}
-      </span>
+      {tooltip ? <Tooltip text={tooltip}>{tag}</Tooltip> : tag}
 
       {showDescription && description && (
         <span
