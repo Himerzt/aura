@@ -11,6 +11,7 @@ import {
   type FrictionReason,
 } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
+import { useWarnUnsaved } from '@/lib/useWarnUnsaved'
 import ErrorCard from '@/components/ui/ErrorCard'
 import { ChecklistSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, MoodState, Task } from '@/lib/types'
@@ -129,6 +130,8 @@ export default function ChecklistPage() {
   const [retryEncouragement, setRetryEncouragement] = useState<string | null>(null)
 
   const date = useMemo(() => todayKey(), [])
+
+  useWarnUnsaved(note.length > 0)
 
   useEffect(() => {
     let cancelled = false
@@ -535,6 +538,28 @@ export default function ChecklistPage() {
 
   return (
     <PageShell>
+      <nav className="anim-fade-in" style={{ marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => router.push('/morning')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 0',
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-tertiary)',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--mood-color)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)' }}
+        >
+          ← Quay lại
+        </button>
+      </nav>
       <header className="anim-fade-in-up" style={{ textAlign: 'center', marginBottom: 28 }}>
         <p
           style={{
@@ -1131,7 +1156,7 @@ function ActionMiniButton({
         fontSize: '0.72rem',
         letterSpacing: '0.04em',
         padding: '8px 14px',
-        minHeight: 36,
+        minHeight: 44,
         borderRadius: 999,
         border: emphasis
           ? '1px solid var(--mood-color)'
@@ -1380,7 +1405,7 @@ function FrictionModal({
                 onClick={() => setReason(opt.value)}
                 style={{
                   padding: '10px 16px',
-                  minHeight: 40,
+                  minHeight: 44,
                   borderRadius: 999,
                   border: active
                     ? '1.5px solid var(--mood-color)'
@@ -1433,7 +1458,7 @@ function FrictionModal({
             type="button"
             className="btn-ghost"
             onClick={onCancel}
-            style={{ borderRadius: 10, cursor: 'pointer', padding: '10px 18px', fontSize: '0.85rem' }}
+            style={{ borderRadius: 10, cursor: 'pointer', padding: '10px 18px', minHeight: 44, fontSize: '0.85rem' }}
           >
             Huỷ
           </button>
@@ -1446,6 +1471,7 @@ function FrictionModal({
               borderRadius: 10,
               cursor: reason ? 'pointer' : 'not-allowed',
               padding: '10px 18px',
+              minHeight: 44,
               fontSize: '0.85rem',
               opacity: reason ? 1 : 0.5,
             }}

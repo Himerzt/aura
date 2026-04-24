@@ -411,6 +411,7 @@ export default function OnboardingPage() {
                     disabled={!draft.trim() || typing || submitting}
                     style={{
                       padding: '10px 22px',
+                      minHeight: 44,
                       borderRadius: 12,
                       fontFamily: 'var(--font-body-loaded, DM Sans, system-ui)',
                       fontSize: '0.9rem',
@@ -502,6 +503,7 @@ function ReviewCard({
           onClick={onKeep}
           style={{
             padding: '12px 22px',
+            minHeight: 44,
             borderRadius: 12,
             cursor: 'pointer',
             fontSize: '0.9rem',
@@ -515,6 +517,7 @@ function ReviewCard({
           onClick={onEdit}
           style={{
             padding: '12px 22px',
+            minHeight: 44,
             borderRadius: 12,
             cursor: 'pointer',
             fontSize: '0.9rem',

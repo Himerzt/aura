@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import MoodOrb from '@/components/aura/MoodOrb'
 import { useMood } from '@/lib/mood-context'
 import { InlineError } from '@/components/ui/ErrorCard'
+import { useWarnUnsaved } from '@/lib/useWarnUnsaved'
 import { postMorning, getProfile, getHistory, getBadDayMessageToday, markBadDayMessageUsed } from '@/lib/api'
 import type { BadDayMessageEntry } from '@/lib/api'
 import type { DayEntry, MorningResult, Task } from '@/lib/types'
@@ -86,6 +87,8 @@ export default function MorningPage() {
   const [gentleMode, setGentleMode] = useState(false)
   const [badDayMsg, setBadDayMsg] = useState<BadDayMessageEntry | null>(null)
   const [badDayDismissed, setBadDayDismissed] = useState(false)
+
+  useWarnUnsaved(userInput.length > 0 && !result)
 
   // Fetch profile — if not onboarded, redirect
   useEffect(() => {
@@ -252,6 +255,7 @@ export default function MorningPage() {
                   borderRadius: 999,
                   cursor: 'pointer',
                   padding: '6px 14px',
+                  minHeight: 44,
                   fontSize: '0.78rem',
                 }}
               >
@@ -265,6 +269,7 @@ export default function MorningPage() {
                   borderRadius: 999,
                   cursor: 'pointer',
                   padding: '6px 14px',
+                  minHeight: 44,
                   fontSize: '0.78rem',
                   opacity: 0.75,
                 }}
@@ -315,6 +320,7 @@ export default function MorningPage() {
                 borderRadius: 999,
                 cursor: 'pointer',
                 padding: '6px 14px',
+                minHeight: 44,
                 fontSize: '0.78rem',
               }}
             >

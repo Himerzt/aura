@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToday, postEvening } from '@/lib/api'
 import { useMood } from '@/lib/mood-context'
+import { useWarnUnsaved } from '@/lib/useWarnUnsaved'
 import ErrorCard, { InlineError } from '@/components/ui/ErrorCard'
 import { EveningSkeleton } from '@/components/ui/Skeleton'
 import type { DayEntry, EveningResult, MoodState, Task } from '@/lib/types'
@@ -43,6 +44,8 @@ export default function EveningPage() {
   const [result, setResult] = useState<EveningResult | null>(null)
 
   const date = useMemo(() => todayKey(), [])
+
+  useWarnUnsaved(reflection.length > 0 && !result)
 
   useEffect(() => {
     let cancelled = false
@@ -443,6 +446,8 @@ function GuidedReflection({
               cursor: 'pointer',
               textDecoration: 'underline',
               textUnderlineOffset: '3px',
+              minHeight: 44,
+              padding: '0 4px',
             }}
           >
             Dùng 3 câu hỏi gợi ý
@@ -504,6 +509,8 @@ function GuidedReflection({
             cursor: 'pointer',
             textDecoration: 'underline',
             textUnderlineOffset: '3px',
+            minHeight: 44,
+            padding: '0 4px',
           }}
         >
           Viết tự do
@@ -758,11 +765,36 @@ function createNoiseNode(ctx: AudioContext, type: AmbientMode): AudioNode {
   return source
 }
 
+const AMBIENT_PREF_KEY = 'aura_ambient_pref'
+
 function AmbientToggle() {
-  const [mode, setMode] = useState<AmbientMode>('off')
+  const [mode, setMode] = useState<AmbientMode>(() => {
+    if (typeof window === 'undefined') return 'off'
+    const saved = window.localStorage.getItem(AMBIENT_PREF_KEY)
+    return saved === 'rain' || saved === 'lofi' ? saved : 'off'
+  })
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const gainRef = useRef<GainNode | null>(null)
+  const initializedRef = useRef(false)
+
+  // Auto-play saved preference on mount
+  useEffect(() => {
+    if (initializedRef.current) return
+    initializedRef.current = true
+    if (mode !== 'off') {
+      if (!ctxRef.current) ctxRef.current = new AudioContext()
+      const ctx = ctxRef.current
+      const gain = ctx.createGain()
+      gain.gain.value = 0.25
+      gain.connect(ctx.destination)
+      gainRef.current = gain
+      const node = createNoiseNode(ctx, mode) as AudioBufferSourceNode
+      node.connect(gain)
+      node.start()
+      sourceRef.current = node
+    }
+  }, [mode])
 
   const stop = useCallback(() => {
     if (sourceRef.current) {
@@ -798,9 +830,11 @@ function AmbientToggle() {
       stop()
       if (mode === selected) {
         setMode('off')
+        window.localStorage.removeItem(AMBIENT_PREF_KEY)
       } else {
         setMode(selected)
         play(selected)
+        window.localStorage.setItem(AMBIENT_PREF_KEY, selected)
       }
     },
     [mode, stop, play],
@@ -1030,6 +1064,7 @@ function LetterToTomorrow({ date }: { date: string }) {
               borderRadius: 10,
               cursor: canSave ? 'pointer' : 'default',
               padding: '6px 16px',
+              minHeight: 44,
               fontSize: '0.8rem',
               opacity: canSave ? 1 : 0.5,
             }}
