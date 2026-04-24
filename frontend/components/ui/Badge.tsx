@@ -28,9 +28,9 @@ const moodConfigMap: Record<NonNullable<BadgeProps['mood']>, MoodConfig> = {
     border: 'rgba(168,196,224,0.3)',
   },
   anxious: {
-    color: '#C4A8E0',
-    background: 'rgba(196,168,224,0.12)',
-    border: 'rgba(196,168,224,0.3)',
+    color: 'var(--mood-anxious)',
+    background: 'color-mix(in srgb, var(--mood-anxious) 12%, transparent)',
+    border: 'color-mix(in srgb, var(--mood-anxious) 30%, transparent)',
   },
   overwhelmed: {
     color: 'var(--rose)',
@@ -38,9 +38,9 @@ const moodConfigMap: Record<NonNullable<BadgeProps['mood']>, MoodConfig> = {
     border: 'rgba(212,132,138,0.3)',
   },
   numb: {
-    color: '#5C6B7A',
-    background: 'rgba(92,107,122,0.15)',
-    border: 'rgba(92,107,122,0.3)',
+    color: 'var(--mood-numb)',
+    background: 'color-mix(in srgb, var(--mood-numb) 15%, transparent)',
+    border: 'color-mix(in srgb, var(--mood-numb) 30%, transparent)',
   },
 }
 
@@ -79,8 +79,8 @@ function getVariantStyle(
     case 'difficulty':
       return {
         color: 'var(--text-secondary)',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid var(--border-subtle)',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border-default)',
       }
     default:
       return {}

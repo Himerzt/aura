@@ -1223,7 +1223,7 @@ function Checkbox({ done, index, justCompleted }: { done: boolean; index: number
 function Chip({ children, tone }: { children: React.ReactNode; tone?: 'warn' | 'soft' }) {
   const palette =
     tone === 'warn'
-      ? { color: '#ff9b7a', border: '#ff9b7a' }
+      ? { color: 'var(--mood-overwhelmed)', border: 'var(--mood-overwhelmed)' }
       : tone === 'soft'
       ? { color: 'var(--mood-color-soft, var(--mood-color))', border: 'var(--border-strong)' }
       : { color: 'var(--text-tertiary)', border: 'var(--border-default)' }
