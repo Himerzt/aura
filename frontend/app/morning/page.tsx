@@ -137,7 +137,7 @@ export default function MorningPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await postMorning(input)
+      const res = await postMorning(input, preCommit)
       setResult(res)
       if (res.type === 'morning' && res.wellness?.mood_state) {
         setMood(res.wellness.mood_state)

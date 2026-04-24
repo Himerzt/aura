@@ -135,6 +135,7 @@ def get_task_prompt(
     goal: str = "",
     context: str = "",
     support_style: str = "balanced",
+    pre_commit: Optional[dict] = None,
 ) -> str:
     if energy <= 3:
         max_tasks, max_time, difficulty = 1, 15, "very_easy"
@@ -162,10 +163,27 @@ def get_task_prompt(
     }
     style_text = style_map.get(support_style, style_map["balanced"])
 
+    if pre_commit:
+        pre_commit_block = f"""
+## PRE-COMMIT IF-THEN (user's intent from last night — HIGH PRIORITY)
+The user made an implementation intention last night:
+"Ngày mai lúc {pre_commit.get('when', '')} tôi sẽ {pre_commit.get('what', '')}"
+
+You MUST include this pre-commit as a task in today's list, OR explicitly replace it with a reason.
+
+Decision rules:
+1. If the pre-commit is compatible with the user's current energy level and psychological state → include it as the FIRST task. Add a field "pre_commit_kept": true and "pre_commit_reason": "<1 Vietnamese sentence explaining why this choice is right and what impact it will have>".
+2. If the pre-commit is NOT compatible (e.g., energy too low for the intended action, or it would worsen detected pattern) → replace it with an easier alternative. Add "pre_commit_kept": false and "pre_commit_reason": "<1 Vietnamese sentence explaining why you're replacing it and what the replacement achieves instead>".
+
+Either way, the first task in the output MUST have "pre_commit_kept" and "pre_commit_reason" fields.
+"""
+    else:
+        pre_commit_block = ""
+
     return f"""You are AURA's Task Generator agent. Generate actionable tasks using the {fw_name} framework.
 
 Framework guidance: {fw_desc}
-
+{pre_commit_block}
 ## USER GOAL (CRITICAL — tasks MUST advance this goal)
 {goal_text}
 {context_text}
@@ -197,11 +215,15 @@ Output format (strict JSON, no markdown):
       "title": "<short task title in Vietnamese — action toward the goal>",
       "implementation": "<full implementation intention in Vietnamese>",
       "estimated_minutes": <integer>,
-      "difficulty": "<very_easy|easy|medium|hard>"
+      "difficulty": "<very_easy|easy|medium|hard>",
+      "pre_commit_kept": <true|false|null>,
+      "pre_commit_reason": "<Vietnamese sentence|null>"
     }}
   ],
   "encouragement": "<1 warm sentence in Vietnamese, non-toxic positivity>"
 }}
+
+Note: "pre_commit_kept" and "pre_commit_reason" are ONLY required on the first task when a pre-commit was provided. Set to null otherwise.
 
 Respond in JSON only."""
 

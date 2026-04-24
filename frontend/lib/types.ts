@@ -54,6 +54,8 @@ export interface Task {
   first_action_delay_minutes?: number
   friction?: FrictionLog
   replaced_from?: Partial<Task>
+  pre_commit_kept?: boolean | null
+  pre_commit_reason?: string | null
 }
 
 // ---- Morning Pipeline Result ----

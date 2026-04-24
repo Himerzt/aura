@@ -16,7 +16,11 @@ CRISIS_HOTLINES = [
 ]
 
 
-async def run_morning_pipeline(user_input: str, profile: dict) -> dict:
+async def run_morning_pipeline(
+    user_input: str,
+    profile: dict,
+    pre_commit: dict | None = None,
+) -> dict:
     """
     Full morning pipeline: Wellness → Insight → Tasks.
 
@@ -65,7 +69,7 @@ async def run_morning_pipeline(user_input: str, profile: dict) -> dict:
 
     # ── Agent 3: Task Generator ──────────────────────────────────────────────
     energy = wellness.get("energy_level", 5)
-    task_result = await run_task_generator(insight, profile, energy)
+    task_result = await run_task_generator(insight, profile, energy, pre_commit=pre_commit)
 
     result = {
         "type": "morning",

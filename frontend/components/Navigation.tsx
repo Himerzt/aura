@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from '@/lib/theme-context'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '◉' },
-  { href: '/morning',   label: 'Morning',   icon: '☀' },
-  { href: '/checklist', label: 'Checklist', icon: '✓' },
-  { href: '/evening',   label: 'Evening',   icon: '◐' },
+  { href: '/dashboard',   label: 'Dashboard', icon: '◉' },
+  { href: '/morning',     label: 'Morning',   icon: '☀' },
+  { href: '/checklist',   label: 'Checklist', icon: '✓' },
+  { href: '/evening',     label: 'Evening',   icon: '◐' },
+  { href: '/onboarding',  label: 'Hồ sơ',     icon: '◈' },
 ]
 
 function ThemeToggle({ compact = false }: { compact?: boolean }) {
@@ -57,7 +58,7 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
   )
 }
 
-const HIDDEN_ROUTES = ['/onboarding']
+const HIDDEN_ROUTES: string[] = []
 
 export default function Navigation() {
   const pathname = usePathname()

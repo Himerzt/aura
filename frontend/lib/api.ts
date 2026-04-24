@@ -26,10 +26,18 @@ export function getProfile(): Promise<UserProfile> {
   return json<UserProfile>('/api/profile')
 }
 
-export function postMorning(user_input: string): Promise<MorningResult> {
+export interface PreCommitPayload {
+  when: string
+  what: string
+}
+
+export function postMorning(
+  user_input: string,
+  pre_commit?: PreCommitPayload | null,
+): Promise<MorningResult> {
   return json<MorningResult>('/api/morning', {
     method: 'POST',
-    body: JSON.stringify({ user_input }),
+    body: JSON.stringify({ user_input, pre_commit: pre_commit ?? null }),
   })
 }
 

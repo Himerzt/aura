@@ -54,8 +54,14 @@ class OnboardingRequest(BaseModel):
     support_style: str = "balanced"
 
 
+class PreCommitPayload(BaseModel):
+    when: str   # e.g. "7h sáng"
+    what: str   # e.g. "đi bộ 10 phút sau khi pha cà phê"
+
+
 class MorningRequest(BaseModel):
     user_input: str
+    pre_commit: Optional[PreCommitPayload] = None
 
 
 class EveningRequest(BaseModel):
@@ -120,7 +126,8 @@ async def morning_checkin(req: MorningRequest):
     profile = load_profile()
 
     try:
-        result = await run_morning_pipeline(req.user_input, profile)
+        pre_commit = req.pre_commit.model_dump() if req.pre_commit else None
+        result = await run_morning_pipeline(req.user_input, profile, pre_commit=pre_commit)
     except ValueError as e:
         raise HTTPException(status_code=502, detail=f"AI pipeline lỗi: {str(e)}")
 

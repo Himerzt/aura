@@ -1011,36 +1011,51 @@ function TaskRow({
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <Chip>{task.estimated_minutes} phút</Chip>
             {task.difficulty && <Chip>{task.difficulty}</Chip>}
+            {task.pre_commit_kept === true && <Chip tone="soft">🔒 IF-THEN giữ nguyên</Chip>}
+            {task.pre_commit_kept === false && <Chip tone="warn">🔄 IF-THEN đã điều chỉnh</Chip>}
             {wasReplaced && <Chip tone="soft">Đã thay nhẹ hơn</Chip>}
             {hasFriction && (
               <Chip tone="warn">
                 Skip: {FRICTION_OPTIONS.find((o) => o.value === task.friction?.reason)?.label ?? task.friction?.reason}
               </Chip>
             )}
-            {emotion && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEmotion(emotion)
-                }}
-                title="Bỏ chọn cảm xúc"
-                style={{
-                  fontSize: '0.78rem',
-                  color: 'var(--text-tertiary)',
-                  background: 'transparent',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                }}
-              >
-                {EMOTION_OPTIONS.find((o) => o.value === emotion)?.emoji}{' '}
-                {EMOTION_OPTIONS.find((o) => o.value === emotion)?.label}
-              </button>
-            )}
           </div>
+          {task.pre_commit_reason && (
+            <p
+              style={{
+                margin: '6px 0 0',
+                fontSize: '0.78rem',
+                color: task.pre_commit_kept ? 'var(--mood-color)' : 'var(--text-tertiary)',
+                fontStyle: 'italic',
+                lineHeight: 1.5,
+              }}
+            >
+              {task.pre_commit_reason}
+            </p>
+          )}
         </div>
       </button>
+      {/* Emotion deselect — must live OUTSIDE the task button to avoid invalid nested <button> */}
+      {emotion && (
+        <div style={{ display: 'flex', padding: '4px 20px 0' }}>
+          <button
+            type="button"
+            onClick={() => onEmotion(emotion)}
+            title="Bỏ chọn cảm xúc"
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-tertiary)',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+            }}
+          >
+            {EMOTION_OPTIONS.find((o) => o.value === emotion)?.emoji}{' '}
+            {EMOTION_OPTIONS.find((o) => o.value === emotion)?.label}
+          </button>
+        </div>
+      )}
 
       {/* Action row — retry easier / skip with reason */}
       {!done && (

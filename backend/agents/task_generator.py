@@ -33,6 +33,7 @@ async def run_task_generator(
     user_profile: dict,
     energy_level: int,
     available_time: int | None = None,
+    pre_commit: dict | None = None,
 ) -> dict:
     """
     Generate tasks with implementation intentions based on framework and energy.
@@ -53,6 +54,7 @@ async def run_task_generator(
     system_prompt = get_task_prompt(
         framework, energy_level, anchors,
         goal=goal, context=context, support_style=support_style,
+        pre_commit=pre_commit,
     )
 
     user_content = (
@@ -84,7 +86,7 @@ async def run_task_generator(
 
     # Validate each task structure
     total_minutes = 0
-    for task in data["tasks"]:
+    for i, task in enumerate(data["tasks"]):
         missing = [f for f in TASK_FIELDS if f not in task]
         if missing:
             raise ValueError(f"Task missing fields: {missing}. Task: {task}")
@@ -92,6 +94,13 @@ async def run_task_generator(
             task["difficulty"] = "easy"
         task["estimated_minutes"] = max(1, int(task.get("estimated_minutes", 5)))
         total_minutes += task["estimated_minutes"]
+        # Ensure pre_commit fields exist on all tasks (null for non-first or when no pre_commit)
+        if i == 0 and pre_commit:
+            task.setdefault("pre_commit_kept", None)
+            task.setdefault("pre_commit_reason", None)
+        else:
+            task["pre_commit_kept"] = None
+            task["pre_commit_reason"] = None
 
     # Enforce total time limit
     if total_minutes > max_total_min:
