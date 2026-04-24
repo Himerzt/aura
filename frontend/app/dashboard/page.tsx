@@ -65,6 +65,7 @@ function getGreeting(): string {
 export default function DashboardPage() {
   const router = useRouter()
   const { setMood } = useMood()
+  const isMobile = useIsMobile()
   // Progressive loading: 3 priority groups
   const [coreReady, setCoreReady] = useState(false)
   const [historyReady, setHistoryReady] = useState(false)
@@ -233,6 +234,7 @@ export default function DashboardPage() {
               letter={weeklyLetter.letter}
               sundayDate={weeklyLetter.sunday_date}
               archive={weeklyLetter.archive ?? []}
+              isMobile={isMobile}
             />
           )}
         </FadeIn>
@@ -285,13 +287,13 @@ export default function DashboardPage() {
           <SectionSkeleton height={300} />
         ) : (
           <FadeIn show={extrasReady && !!radar}>
-            {radar && <PatternRadar counts={radar.counts} days={radar.days} />}
+            {radar && <PatternRadar counts={radar.counts} days={radar.days} isMobile={isMobile} />}
           </FadeIn>
         )}
 
         {/* ── Energy × mood scatter (Phần 8E) — P3 ── */}
         <FadeIn show={extrasReady}>
-          <EnergyMoodScatter points={energyMood} />
+          <EnergyMoodScatter points={energyMood} isMobile={isMobile} />
         </FadeIn>
 
         {/* ── Why-today Card (STT 23) — P1 + P2 ── */}
@@ -348,6 +350,18 @@ export default function DashboardPage() {
 // ═══════════════════════════════════════════════════════════════
 // Helpers — progressive loading
 // ═══════════════════════════════════════════════════════════════
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
+}
 
 function FadeIn({ show, children }: { show: boolean; children: React.ReactNode }) {
   if (!show) return null
@@ -816,6 +830,7 @@ function MilestoneShareCard({
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
+          minHeight: 44,
         }}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -1160,10 +1175,13 @@ const FRAMEWORK_ORDER: Framework[] = [
 function PatternRadar({
   counts,
   days,
+  isMobile = false,
 }: {
   counts: Partial<Record<Framework, number>>
   days: number
+  isMobile?: boolean
 }) {
+  const [open, setOpen] = useState(false)
   const total = Object.values(counts).reduce((a: number, b) => a + (b ?? 0), 0)
   if (total === 0) {
     return (
@@ -1196,8 +1214,37 @@ function PatternRadar({
   const polygonPath = polygon.map((p) => `${p.x},${p.y}`).join(' ')
 
   return (
-    <div className="glass-card" style={{ padding: 24 }}>
-      <SectionLabel>Framework radar ({days} ngày)</SectionLabel>
+    <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {isMobile ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          style={{
+            width: '100%',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            minHeight: 44,
+          }}
+        >
+          <span style={{ fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+            Framework radar ({days} ngày)
+          </span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}>
+            <path d="M4 6l4 4 4-4" stroke="var(--text-tertiary)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <div style={{ padding: '24px 24px 0' }}>
+          <SectionLabel>Framework radar ({days} ngày)</SectionLabel>
+        </div>
+      )}
+      {(!isMobile || open) && (
+      <div style={{ padding: isMobile ? '0 24px 24px' : '0 24px 24px' }}>
       <div
         style={{
           display: 'flex',
@@ -1295,6 +1342,8 @@ function PatternRadar({
       >
         {total} ngày có framework trong {days} ngày qua
       </p>
+      </div>
+      )}
     </div>
   )
 }
@@ -1309,7 +1358,8 @@ const MOOD_SCORE: Record<string, number> = {
   energized: 5,
 }
 
-function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
+function EnergyMoodScatter({ points, isMobile = false }: { points: EnergyMoodPoint[]; isMobile?: boolean }) {
+  const [open, setOpen] = useState(false)
   const valid = points.filter(
     (p): p is Required<EnergyMoodPoint> & { mood: string; energy: number } =>
       !!p.mood && typeof p.energy === 'number' && p.energy > 0,
@@ -1349,8 +1399,37 @@ function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
   }
 
   return (
-    <div className="glass-card" style={{ padding: 24 }}>
-      <SectionLabel>Năng lượng × Mood (7 ngày)</SectionLabel>
+    <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {isMobile ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          style={{
+            width: '100%',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            minHeight: 44,
+          }}
+        >
+          <span style={{ fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+            Năng lượng × Mood (7 ngày)
+          </span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}>
+            <path d="M4 6l4 4 4-4" stroke="var(--text-tertiary)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <div style={{ padding: '24px 24px 0' }}>
+          <SectionLabel>Năng lượng × Mood (7 ngày)</SectionLabel>
+        </div>
+      )}
+      {(!isMobile || open) && (
+      <div style={{ padding: '0 24px 24px' }}>
       <div
         style={{
           display: 'flex',
@@ -1440,6 +1519,8 @@ function EnergyMoodScatter({ points }: { points: EnergyMoodPoint[] }) {
       >
         Trục X = mood (tệ → tốt) · Trục Y = energy (1–10)
       </p>
+      </div>
+      )}
     </div>
   )
 }
@@ -1512,10 +1593,12 @@ function WeeklyLetterCard({
   letter,
   sundayDate,
   archive,
+  isMobile = false,
 }: {
   letter: { letter_title: string; letter_body: string; signature_mood: string; read: boolean }
   sundayDate?: string
   archive: WeeklyLetterArchiveItem[]
+  isMobile?: boolean
 }) {
   const [expanded, setExpanded] = useState(!letter.read)
   const [showArchive, setShowArchive] = useState(false)
@@ -1623,6 +1706,44 @@ function WeeklyLetterCard({
         </svg>
       </button>
 
+      {/* Excerpt — mobile only, collapsed state */}
+      {isMobile && !expanded && (
+        <div style={{ padding: '0 24px 16px' }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '0.86rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.6,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {letter.letter_body}
+          </p>
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            style={{
+              marginTop: 8,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              color: 'var(--mood-color)',
+              padding: '4px 0',
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            Đọc thêm
+          </button>
+        </div>
+      )}
+
       {/* Letter body — collapsible */}
       {expanded && (
         <div
@@ -1672,6 +1793,7 @@ function WeeklyLetterCard({
                   cursor: 'pointer',
                   padding: '6px 14px',
                   fontSize: '0.72rem',
+                  minHeight: 44,
                 }}
               >
                 {showArchive ? 'Ẩn thư cũ' : `Xem ${oldLetters.length} thư cũ`}
@@ -1860,7 +1982,7 @@ function BadDayRehearsalPrompt({
           type="button"
           className="btn-ghost"
           onClick={() => setOpen(true)}
-          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem' }}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem', minHeight: 44 }}
         >
           Viết ngay
         </button>
@@ -1899,7 +2021,7 @@ function BadDayRehearsalPrompt({
           type="button"
           className="btn-ghost"
           onClick={() => setOpen(false)}
-          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 16px', fontSize: '0.78rem' }}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 16px', fontSize: '0.78rem', minHeight: 44 }}
         >
           Huỷ
         </button>
@@ -1913,7 +2035,7 @@ function BadDayRehearsalPrompt({
               setSaved(true)
             }
           }}
-          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem' }}
+          style={{ borderRadius: 10, cursor: 'pointer', padding: '8px 18px', fontSize: '0.8rem', minHeight: 44 }}
         >
           Lưu
         </button>
