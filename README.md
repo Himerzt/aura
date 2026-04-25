@@ -7,6 +7,9 @@
 ![Gemini](https://img.shields.io/badge/Gemini_2.5_Flash-4285F4?style=flat&logo=google&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat&logo=railway&logoColor=white)
+
+**Live demo:** https://aura-production-e715.up.railway.app
 
 ---
 
@@ -98,7 +101,93 @@ Chủ nhật:  history_7_days + profile + patterns
 
 ---
 
-## 3. Psychology Framework Engine
+## 3. Demo — Luồng Sử Dụng Thực Tế
+
+### Bước 1 — Hồ sơ cá nhân
+
+Mỗi lần mở app, AURA hiển thị lại hồ sơ để người dùng xác nhận hoặc cập nhật. Mục tiêu, bối cảnh cuộc sống, những gì đã thử và thất bại, thói quen hiện có — tất cả trở thành context cho pipeline AI.
+
+![Profile screen](image_Demo/img_profile.png)
+
+---
+
+### Bước 2 — Check-in buổi sáng
+
+Người dùng viết tự do về trạng thái hiện tại. Không cần format, không cần chọn từ danh sách. AURA đọc ngôn ngữ tự nhiên và suy luận từ đó.
+
+![Morning check-in input](image_Demo/img_checkinng_morning_.png)
+
+---
+
+### Bước 3 — Pipeline đang chạy
+
+Sau khi gửi, 3 agent chạy tuần tự (Wellness → Psychology → Task Generator). Trung bình 8–15 giây. MoodOrb hiển thị trạng thái xử lý — người dùng biết hệ thống đang làm gì, không phải bị treo.
+
+![Pipeline processing](image_Demo/img_task_genneratingg.png)
+
+---
+
+### Bước 4 — Kết quả: Framework + Tasks
+
+Agent 2 chọn framework phù hợp (ở đây: **Habit Stacking** vì energy 9/10, mood energized). Agent 3 tạo 3 tasks với Implementation Intention — mỗi task có trigger cụ thể, địa điểm, thời lượng, độ khó.
+
+Background aura chuyển sang cam — màu của mood *energized*.
+
+![Post-generation result](image_Demo/img_post_task_generation.png)
+
+---
+
+### Bước 5 — Checklist trong ngày
+
+Trong ngày người dùng vào Checklist để tick task hoàn thành, ghi nhận cảm xúc sau mỗi task (emoji reaction), và theo dõi energy midday so với buổi sáng. Seed of the day nhắc lại câu hỏi từ 6 ngày trước.
+
+![Checklist tracking](image_Demo/img_checklist_done.png)
+
+---
+
+### Bước 6 — Ghi chú nhanh + Kết thúc ngày
+
+Sau khi tick xong task, người dùng có thể ghi chú nhanh bất kỳ điều gì. Nút "Kết thúc ngày" chuyển sang Evening reflection.
+
+![Quick note and end of day](image_Demo/img_checklist_take_note.png)
+
+---
+
+### Bước 7 — Reflection buổi tối
+
+Agent 4 đặt 3 câu hỏi có cấu trúc để khai thác insight: 1 điều học được, 1 điều ngạc nhiên, 1 điều biết ơn. Không phải journal tự do — câu hỏi có chủ đích để tạo dữ liệu có cấu trúc cho pattern detection.
+
+Bên trái hiển thị đối chiếu các task đã xong trong ngày.
+
+![Evening reflection form](image_Demo/img_reflection.png)
+
+---
+
+### Bước 8 — AURA phân tích ngày của bạn
+
+Agent 4 tổng hợp toàn bộ ngày: tóm tắt, pattern đang hình thành, điểm sáng từ streak, và câu hỏi cho ngày mai — được thiết kế dựa trên dữ liệu thực tế của ngày hôm đó, không phải câu hỏi generic.
+
+![AURA reflection response](image_Demo/aura_respone_reflection.png)
+
+---
+
+### Bước 9 — Dashboard tổng quan (Dark mode)
+
+Dashboard hiển thị streak hiện tại (12 ngày liên tiếp), biểu đồ mood 7 ngày qua, tasks hôm nay, mood hiện tại so với hôm qua, và thời gian trung bình từ khi tạo task đến khi bắt đầu làm (10 phút — behavior metric, không phải vanity metric).
+
+![Dashboard dark mode](image_Demo/aura_dashboard.png)
+
+---
+
+### Bước 10 — Dashboard (Light mode)
+
+Light mode tự động điều chỉnh toàn bộ color system. Phần dưới dashboard: mục tiêu 30 ngày, milestone, tính năng "Dặn mình cho ngày khó" (viết sẵn câu động viên cho bản thân khi khó khăn), và Weekly Insight từ Agent 5.
+
+![Dashboard light mode](image_Demo/aura_dashboard_light.png)
+
+---
+
+## 4. Psychology Framework Engine
 
 Agent 2 chọn 1 trong 8 framework dựa trên trigger condition được phát hiện từ input và lịch sử pattern:
 
@@ -117,7 +206,7 @@ Framework không phải gợi ý — là quyết định của Agent 2 dựa tr�
 
 ---
 
-## 4. Task Generation Rule Engine
+## 5. Task Generation Rule Engine
 
 Agent 3 không được tin tưởng hoàn toàn — LLM có thể vi phạm prompt rules. Rule engine được enforce ở Python code (validate sau khi parse JSON từ Gemini):
 
@@ -133,7 +222,7 @@ Mỗi task kèm **Implementation Intention**: "Khi [trigger], tôi sẽ [action]
 
 ---
 
-## 5. Quyết Định Kỹ Thuật
+## 6. Quyết Định Kỹ Thuật
 
 ### Tại sao Next.js 15 App Router?
 
@@ -159,7 +248,7 @@ Auth được build ở Phần 10 rồi bị remove. Lý do: JWT middleware khô
 
 ---
 
-## 6. Chạy Locally
+## 7. Chạy Locally
 
 **Prerequisites:** Docker Desktop đang chạy, Git.
 
@@ -187,20 +276,6 @@ Lần đầu chạy sẽ mất 2–3 phút để build image. Lần sau: `docker
 # Tạo 10 ngày lịch sử mẫu để xem Dashboard ngay
 docker-compose exec backend python scripts/seed_demo.py
 ```
-
----
-
-## 7. Screenshots
-
-> Sẽ thêm sau khi chụp màn hình thực tế.
-
-| Màn hình | Mô tả |
-|----------|-------|
-| Onboarding | 5 bước intake profile |
-| Morning pipeline | Input → kết quả 4 agent |
-| Checklist | Task tracking với friction data |
-| Evening reflection | Câu hỏi gợi ý + IF-THEN |
-| Dashboard | Streak + weekly letter + pattern history |
 
 ---
 
@@ -259,4 +334,4 @@ Những gì sẽ được build nếu AURA chuyển từ personal tool sang prod
 
 ---
 
-*Built as a portfolio project — solo, 10 parts, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker.*
+*Built as a portfolio project — solo, 10 parts, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker + Railway.*
