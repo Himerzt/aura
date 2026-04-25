@@ -10,10 +10,14 @@ import type {
 
 // ── Core fetch helper ───────────────────────────────────────────────────────
 
-// On Railway, frontend and backend are separate services.
-// NEXT_PUBLIC_API_URL must be set to the backend Railway URL (e.g. https://aura-backend.up.railway.app).
-// Falls back to 'http://localhost:8000' for local dev (direct) or '' when behind Nginx proxy.
-const BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+// All API calls use relative URLs by default (/api/...) so the Next.js server
+// proxy route (app/api/[...path]/route.ts) forwards them to the backend via
+// BACKEND_ORIGIN env var (server-side only, never exposed to the browser).
+//
+// Override with NEXT_PUBLIC_API_URL only when you want the browser to call the
+// backend directly (e.g. local dev without Docker: NEXT_PUBLIC_API_URL=http://localhost:8000).
+// Leave it unset in Railway — relative URLs go through the proxy automatically.
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
