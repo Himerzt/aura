@@ -4,7 +4,7 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat&logo=nextdotjs&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini_2.5_Flash-4285F4?style=flat&logo=google&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_3.1_Flash_Lite_Preview-4285F4?style=flat&logo=google&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat&logo=railway&logoColor=white)
@@ -232,7 +232,7 @@ Server Components giúp giữ API key và data fetch ở server. App Router cho 
 
 Async-native và tích hợp tốt với Google Genai SDK. Pipeline 4 agent chạy tuần tự — mỗi agent là một async function call, dễ test độc lập. Pydantic models enforce output schema của từng agent trước khi truyền sang agent tiếp theo.
 
-### Tại sao Gemini 2.5 Flash Lite?
+### Tại sao Gemini 3.1 Flash Lite Preview?
 
 Latency thấp (~1-2s/agent) và giá phù hợp cho MVP demo. Quan trọng hơn: model đủ mạnh để follow JSON schema nghiêm ngặt với temperature thấp, điều kiện tiên quyết để rule engine Python phía sau không bị bể.
 
@@ -301,8 +301,15 @@ Gemini đôi khi trộn lẫn tiếng Anh vào response tiếng Việt, đặc b
 
 ## 9. Known Limitations
 
-**Single-user, local only.**
-Không có auth, không có account system. Dữ liệu lưu trong `backend/data/` — nếu xoá container mà không mount volume, dữ liệu mất. Đây là local tool cho một người dùng trên một máy.
+> **Trạng thái hiện tại: Single-user MVP**
+>
+> AURA ở phiên bản hiện tại là **công cụ cá nhân cho một người dùng duy nhất**, không phải SaaS platform. Các giới hạn dưới đây là **quyết định có chủ đích** để tập trung vào core value (pipeline tâm lý học) thay vì infrastructure — không phải thiếu sót kỹ thuật. Roadmap v2 liệt kê đầy đủ hướng mở rộng.
+
+**Không có auth, không có multi-user.**
+Không có login, không có account system, không có phân quyền. Toàn bộ dữ liệu (profile + history) dùng chung trong `backend/data/`. Nếu 2 người cùng dùng link demo cùng lúc, họ sẽ ghi đè dữ liệu của nhau. Demo live trên Railway được thiết kế cho **một người xem tại một thời điểm**. Multi-user + auth là Roadmap v2 — SQLite schema đã được thiết kế sẵn, migration path rõ ràng.
+
+**Dữ liệu không persist qua deploy.**
+Railway dùng ephemeral filesystem — mỗi lần deploy lại là `history.json` reset về demo data đã commit trong repo. Với local Docker Compose, dữ liệu tồn tại trong container cho đến khi container bị xoá. Để persist dài hạn cần mount volume.
 
 **Không có real-time streaming.**
 Pipeline 4 agent chạy tuần tự và trả về kết quả một lần sau khi xong hết. Không có streaming từng token — người dùng chờ 8–15 giây rồi thấy toàn bộ kết quả. Gemini SDK hỗ trợ streaming nhưng chưa được implement.
@@ -312,9 +319,6 @@ Pattern Alert engine có thể override framework, nhưng lần đầu trong ng�
 
 **Không có notification.**
 Không có reminder buổi sáng/tối. Người dùng phải tự nhớ mở app.
-
-**Dữ liệu không được backup tự động.**
-`history.json` có thể lớn theo thời gian nhưng không có rotation hay compression.
 
 ---
 
