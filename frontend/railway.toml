@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway injects $PORT; Next.js standalone server.js reads it automatically
+startCommand = "node server.js"
+healthcheckPath = "/api/health-proxy"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

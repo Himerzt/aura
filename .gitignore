@@ -3,7 +3,7 @@
 __pycache__/
 *.py[cod]
 backend/data/profile.json
-backend/data/history.json
+# history.json committed intentionally for Railway demo data
 node_modules/
 .next/
 *.db
