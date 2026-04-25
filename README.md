@@ -107,7 +107,7 @@ Chủ nhật:  history_7_days + profile + patterns
 
 Mỗi lần mở app, AURA hiển thị lại hồ sơ để người dùng xác nhận hoặc cập nhật. Mục tiêu, bối cảnh cuộc sống, những gì đã thử và thất bại, thói quen hiện có — tất cả trở thành context cho pipeline AI.
 
-![Profile screen](image_Demo/img_profile.png)
+![Profile screen](image_demo/img_profile.png)
 
 ---
 
@@ -115,7 +115,7 @@ Mỗi lần mở app, AURA hiển thị lại hồ sơ để người dùng xác
 
 Người dùng viết tự do về trạng thái hiện tại. Không cần format, không cần chọn từ danh sách. AURA đọc ngôn ngữ tự nhiên và suy luận từ đó.
 
-![Morning check-in input](image_Demo/img_checkinng_morning_.png)
+![Morning check-in input](image_demo/img_checkinng_morning_.png)
 
 ---
 
@@ -123,7 +123,7 @@ Người dùng viết tự do về trạng thái hiện tại. Không cần form
 
 Sau khi gửi, 3 agent chạy tuần tự (Wellness → Psychology → Task Generator). Trung bình 8–15 giây. MoodOrb hiển thị trạng thái xử lý — người dùng biết hệ thống đang làm gì, không phải bị treo.
 
-![Pipeline processing](image_Demo/img_task_genneratingg.png)
+![Pipeline processing](image_demo/img_task_genneratingg.png)
 
 ---
 
@@ -133,7 +133,7 @@ Agent 2 chọn framework phù hợp (ở đây: **Habit Stacking** vì energy 9/
 
 Background aura chuyển sang cam — màu của mood *energized*.
 
-![Post-generation result](image_Demo/img_post_task_generation.png)
+![Post-generation result](image_demo/img_post_task_generation.png)
 
 ---
 
@@ -141,7 +141,7 @@ Background aura chuyển sang cam — màu của mood *energized*.
 
 Trong ngày người dùng vào Checklist để tick task hoàn thành, ghi nhận cảm xúc sau mỗi task (emoji reaction), và theo dõi energy midday so với buổi sáng. Seed of the day nhắc lại câu hỏi từ 6 ngày trước.
 
-![Checklist tracking](image_Demo/img_checklist_done.png)
+![Checklist tracking](image_demo/img_checklist_done.png)
 
 ---
 
@@ -149,7 +149,7 @@ Trong ngày người dùng vào Checklist để tick task hoàn thành, ghi nh�
 
 Sau khi tick xong task, người dùng có thể ghi chú nhanh bất kỳ điều gì. Nút "Kết thúc ngày" chuyển sang Evening reflection.
 
-![Quick note and end of day](image_Demo/img_checklist_take_note.png)
+![Quick note and end of day](image_demo/img_checklist_take_note.png)
 
 ---
 
@@ -159,7 +159,7 @@ Agent 4 đặt 3 câu hỏi có cấu trúc để khai thác insight: 1 điều 
 
 Bên trái hiển thị đối chiếu các task đã xong trong ngày.
 
-![Evening reflection form](image_Demo/img_reflection.png)
+![Evening reflection form](image_demo/img_reflection.png)
 
 ---
 
@@ -167,7 +167,7 @@ Bên trái hiển thị đối chiếu các task đã xong trong ngày.
 
 Agent 4 tổng hợp toàn bộ ngày: tóm tắt, pattern đang hình thành, điểm sáng từ streak, và câu hỏi cho ngày mai — được thiết kế dựa trên dữ liệu thực tế của ngày hôm đó, không phải câu hỏi generic.
 
-![AURA reflection response](image_Demo/aura_respone_reflection.png)
+![AURA reflection response](image_demo/aura_respone_reflection.png)
 
 ---
 
@@ -175,7 +175,7 @@ Agent 4 tổng hợp toàn bộ ngày: tóm tắt, pattern đang hình thành, �
 
 Dashboard hiển thị streak hiện tại (12 ngày liên tiếp), biểu đồ mood 7 ngày qua, tasks hôm nay, mood hiện tại so với hôm qua, và thời gian trung bình từ khi tạo task đến khi bắt đầu làm (10 phút — behavior metric, không phải vanity metric).
 
-![Dashboard dark mode](image_Demo/aura_dashboard.png)
+![Dashboard dark mode](image_demo/aura_dashboard.png)
 
 ---
 
@@ -183,7 +183,7 @@ Dashboard hiển thị streak hiện tại (12 ngày liên tiếp), biểu đồ
 
 Light mode tự động điều chỉnh toàn bộ color system. Phần dưới dashboard: mục tiêu 30 ngày, milestone, tính năng "Dặn mình cho ngày khó" (viết sẵn câu động viên cho bản thân khi khó khăn), và Weekly Insight từ Agent 5.
 
-![Dashboard light mode](image_Demo/aura_dashboard_light.png)
+![Dashboard light mode](image_demo/aura_dashboard_light.png)
 
 ---
 
