@@ -12,8 +12,8 @@ import type {
 
 // On Railway, frontend and backend are separate services.
 // NEXT_PUBLIC_API_URL must be set to the backend Railway URL (e.g. https://aura-backend.up.railway.app).
-// Falls back to '' (relative path) for local dev behind Nginx proxy.
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+// Falls back to 'http://localhost:8000' for local dev (direct) or '' when behind Nginx proxy.
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
