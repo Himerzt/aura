@@ -2,8 +2,9 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from core.limiter import limiter
 
 from core.memory import (
     load_profile,
@@ -118,7 +119,8 @@ async def update_profile(req: ProfileUpdateRequest):
 
 
 @router.post("/morning")
-async def morning_checkin(req: MorningRequest):
+@limiter.limit("10/minute")
+async def morning_checkin(request: Request, req: MorningRequest):
     """Run morning pipeline (Agent 1→2→3) and save result."""
     if not req.user_input.strip():
         raise HTTPException(status_code=400, detail="user_input không được để trống")

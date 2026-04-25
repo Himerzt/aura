@@ -10,8 +10,13 @@ import type {
 
 // ── Core fetch helper ───────────────────────────────────────────────────────
 
+// On Railway, frontend and backend are separate services.
+// NEXT_PUBLIC_API_URL must be set to the backend Railway URL (e.g. https://aura-backend.up.railway.app).
+// Falls back to '' (relative path) for local dev behind Nginx proxy.
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const res = await fetch(`${BASE}${url}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   })

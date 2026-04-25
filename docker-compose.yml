@@ -13,11 +13,9 @@ services:
     build: ./frontend
     container_name: aura_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost/api
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      # NEXT_PUBLIC_API_URL left unset — uses relative paths (/api/*)
+      # which Nginx proxies to backend. Set this only for Railway deploy.
+      - PORT=3000
     ports:
       - "3000:3000"
     restart: unless-stopped
