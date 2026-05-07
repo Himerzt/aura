@@ -1,18 +1,55 @@
 """JSON-based data layer for single-user MVP.
-# v2: migrate to SQLite for multi-user support
+Supports Supabase as backend via DATABASE_PROVIDER=supabase env var.
+# v2: migrate fully to Supabase for multi-user support
 """
-
-import json
 import os
+import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-DATA_DIR = Path(__file__).parent.parent / "data"
-PROFILE_PATH = DATA_DIR / "profile.json"
-HISTORY_PATH = DATA_DIR / "history.json"
+# ── Storage backend selection ───────────────────────────────────────────────────
+# Set DATABASE_PROVIDER=supabase to use Supabase instead of JSON files.
+# Required env vars for Supabase:
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+_PROVIDER = os.environ.get("DATABASE_PROVIDER", "").strip().lower()
 
-VALID_FRICTION_REASONS = {"tired", "distracted", "forgot", "no_meaning"}
+if _PROVIDER == "supabase":
+    # Lazy import — only loaded when Supabase is configured
+    from core.storage import (
+        load_profile,
+        save_profile,
+        get_today_entry,
+        save_morning,
+        save_evening,
+        get_history_7_days,
+        get_streak,
+        log_friction,
+        track_time_to_first_action,
+        replace_task,
+        get_framework_diversity_7d,
+        get_pattern_radar,
+        get_energy_mood_matrix_7d,
+        get_today_morning,
+        get_most_recent_sunday,
+        get_weekly_letter,
+        save_weekly_letter,
+        mark_weekly_letter_read,
+        get_all_weekly_letters,
+        get_history_for_week,
+        save_bad_day_message,
+        get_bad_day_message,
+        mark_bad_day_message_used,
+        get_all_bad_day_messages,
+        VALID_FRICTION_REASONS,
+    )
+else:
+    # Default: JSON file storage
+    _DATA_DIR = Path(__file__).parent.parent / "data"
+    _PROFILE_PATH = _DATA_DIR / "profile.json"
+    _HISTORY_PATH = _DATA_DIR / "history.json"
+
+    VALID_FRICTION_REASONS = {"tired", "distracted", "forgot", "no_meaning"}
 
 DEFAULT_PROFILE = {
     "user_id": "local_user",
@@ -27,6 +64,8 @@ DEFAULT_PROFILE = {
     "onboarding_completed": False,
 }
 
+
+# ── JSON storage implementation (default) ───────────────────────────────────────
 
 def _read_json(path: Path) -> dict:
     if not path.exists():
@@ -47,27 +86,26 @@ def _write_json(path: Path, data: dict) -> None:
 # ── Profile ──────────────────────────────────────────────────────────────────
 
 def load_profile() -> dict:
-    data = _read_json(PROFILE_PATH)
+    data = _read_json(_PROFILE_PATH)
     if not data:
         return dict(DEFAULT_PROFILE)
-    # Merge defaults for any missing keys
     merged = dict(DEFAULT_PROFILE)
     merged.update(data)
     return merged
 
 
 def save_profile(profile: dict) -> None:
-    _write_json(PROFILE_PATH, profile)
+    _write_json(_PROFILE_PATH, profile)
 
 
 # ── History helpers ──────────────────────────────────────────────────────────
 
 def _load_history() -> dict:
-    return _read_json(HISTORY_PATH)
+    return _read_json(_HISTORY_PATH)
 
 
 def _save_history(history: dict) -> None:
-    _write_json(HISTORY_PATH, history)
+    _write_json(_HISTORY_PATH, history)
 
 
 def get_today_entry() -> dict:
@@ -93,7 +131,6 @@ def save_evening(evening_data: dict, completed_task_ids: list[int] | None = None
     history = _load_history()
     entry = history.setdefault(today, {})
     entry["evening"] = evening_data
-    # Update task completed status based on checklist
     if completed_task_ids is not None and "morning" in entry:
         tasks = entry["morning"].get("tasks", [])
         for i, task in enumerate(tasks):
@@ -113,7 +150,6 @@ def get_history_7_days() -> list[dict]:
 
 
 def _count_completed_days_in_week(history: dict, week_start: date) -> int:
-    """Count days with morning entry in a Mon-Sun week."""
     count = 0
     for i in range(7):
         day = (week_start + timedelta(days=i)).isoformat()
@@ -123,33 +159,24 @@ def _count_completed_days_in_week(history: dict, week_start: date) -> int:
 
 
 def _calculate_shields(history: dict, today: date) -> int:
-    """Calculate total shields earned from completed weeks (≥5/7 days).
-    Shields are consumed when a missed day would break a streak."""
     shields_earned = 0
     shields_used = 0
-
-    # Check completed weeks (not the current partial week)
-    # Go back up to 52 weeks
     current_monday = today - timedelta(days=today.weekday())
     for w in range(1, 53):
         week_start = current_monday - timedelta(weeks=w)
         if _count_completed_days_in_week(history, week_start) >= 5:
             shields_earned += 1
 
-    # Count shields used: missed days inside an otherwise active streak
-    # Walk backwards from today; each gap day that didn't break streak used a shield
-    streak_active = True
     for i in range(1, 365):
         day = (today - timedelta(days=i)).isoformat()
         entry = history.get(day, {})
         if "morning" in entry:
             continue
-        # Missed day — check if streak continued past it
         prev_day = (today - timedelta(days=i + 1)).isoformat()
         if "morning" in history.get(prev_day, {}):
             shields_used += 1
         else:
-            break  # Two consecutive misses = streak truly broken
+            break
 
     return max(shields_earned - shields_used, 0)
 
@@ -166,13 +193,11 @@ def get_streak() -> dict:
         if "morning" in entry:
             current_streak += 1
         elif i == 0:
-            # Today has no entry yet — streak continues from yesterday
             continue
         else:
-            # Missed day — use a shield if available
             if shields > 0:
                 shields -= 1
-                current_streak += 1  # Shield preserves the streak
+                current_streak += 1
                 continue
             break
 
@@ -203,7 +228,6 @@ def log_friction(
     note: str = "",
     date_str: Optional[str] = None,
 ) -> dict:
-    """Log friction (skip reason) for a task. Returns the updated task."""
     if reason not in VALID_FRICTION_REASONS:
         raise ValueError(
             f"reason must be one of {sorted(VALID_FRICTION_REASONS)}, got '{reason}'"
@@ -224,13 +248,12 @@ def track_time_to_first_action(
     task_index: int,
     date_str: Optional[str] = None,
 ) -> dict:
-    """Stamp first tick timestamp + compute delay. Idempotent."""
     date_str = _resolve_date(date_str)
     history = _load_history()
     task = _get_task(history, date_str, task_index)
 
     if "first_action_at" in task:
-        return task  # already tracked
+        return task
 
     now = datetime.now()
     task["first_action_at"] = now.isoformat(timespec="seconds")
@@ -248,12 +271,10 @@ def track_time_to_first_action(
 
 
 def get_framework_diversity_7d() -> dict:
-    """Count framework usage in last 7 days."""
     return get_pattern_radar(days=7)
 
 
 def get_pattern_radar(days: int = 7) -> dict:
-    """Count framework usage in last N days. Returns dict keyed by framework."""
     history = _load_history()
     today = date.today()
     counts: dict[str, int] = {}
@@ -266,7 +287,6 @@ def get_pattern_radar(days: int = 7) -> dict:
 
 
 def get_energy_mood_matrix_7d() -> list[dict]:
-    """Return [{date, mood, energy}] for last 7 days (oldest → newest)."""
     history = _load_history()
     today = date.today()
     result = []
@@ -287,7 +307,6 @@ def replace_task(
     new_task: dict,
     date_str: Optional[str] = None,
 ) -> dict:
-    """Replace a task with new_task, preserving original as `replaced_from`."""
     date_str = _resolve_date(date_str)
     history = _load_history()
     task = _get_task(history, date_str, task_index)
@@ -303,31 +322,27 @@ def replace_task(
 
 
 def get_today_morning() -> dict:
-    """Return today's morning entry (empty dict if none)."""
     return get_today_entry().get("morning", {})
 
 
 # ── Weekly Letter helpers (Phần 9.3) ────────────────────────────────────────
 
 def get_most_recent_sunday() -> str:
-    """Return ISO date string of the most recent Sunday (including today if Sunday)."""
     today = date.today()
-    days_since_sunday = today.weekday() + 1  # Monday=0 ... Sunday=6 → +1
-    if today.weekday() == 6:  # today is Sunday
+    days_since_sunday = today.weekday() + 1
+    if today.weekday() == 6:
         days_since_sunday = 0
     sunday = today - timedelta(days=days_since_sunday)
     return sunday.isoformat()
 
 
 def get_weekly_letter(sunday_date: str | None = None) -> dict | None:
-    """Return the weekly letter for a given Sunday, or None if not found."""
     history = _load_history()
     target = sunday_date or get_most_recent_sunday()
     return history.get(target, {}).get("weekly_letter")
 
 
 def save_weekly_letter(letter: dict, sunday_date: str | None = None) -> None:
-    """Save a weekly letter to history under the Sunday date."""
     target = sunday_date or get_most_recent_sunday()
     history = _load_history()
     entry = history.setdefault(target, {})
@@ -338,7 +353,6 @@ def save_weekly_letter(letter: dict, sunday_date: str | None = None) -> None:
 
 
 def mark_weekly_letter_read(sunday_date: str | None = None) -> None:
-    """Mark a weekly letter as read."""
     target = sunday_date or get_most_recent_sunday()
     history = _load_history()
     letter = history.get(target, {}).get("weekly_letter")
@@ -348,7 +362,6 @@ def mark_weekly_letter_read(sunday_date: str | None = None) -> None:
 
 
 def get_all_weekly_letters() -> list[dict]:
-    """Return all weekly letters from history, newest first."""
     history = _load_history()
     letters = []
     for date_str in sorted(history.keys(), reverse=True):
@@ -359,14 +372,13 @@ def get_all_weekly_letters() -> list[dict]:
 
 
 def get_history_for_week(sunday_date: str | None = None) -> list[dict]:
-    """Return 7 days of history ending on sunday_date (Mon-Sun)."""
     history = _load_history()
     if sunday_date:
         end = date.fromisoformat(sunday_date)
     else:
         end = date.fromisoformat(get_most_recent_sunday())
     result = []
-    for i in range(6, -1, -1):  # Monday to Sunday
+    for i in range(6, -1, -1):
         day = (end - timedelta(days=i)).isoformat()
         if day in history:
             result.append({"date": day, **history[day]})
@@ -379,7 +391,6 @@ COOLDOWN_DAYS = 7
 
 
 def save_bad_day_message(message: str, author_date: str | None = None) -> dict:
-    """Save a bad-day message to profile.bad_day_messages[]. Returns the saved entry."""
     profile = load_profile()
     messages = profile.setdefault("bad_day_messages", [])
     entry = {
@@ -395,7 +406,6 @@ def save_bad_day_message(message: str, author_date: str | None = None) -> dict:
 
 
 def get_bad_day_message() -> dict | None:
-    """Return a bad-day message respecting 7-day cooldown. Prefer unused, then oldest-used."""
     profile = load_profile()
     messages = profile.get("bad_day_messages", [])
     if not messages:
@@ -404,22 +414,18 @@ def get_bad_day_message() -> dict | None:
     today = date.today()
     cutoff = (today - timedelta(days=COOLDOWN_DAYS)).isoformat()
 
-    # Split into: never used, used but cooled down, still in cooldown
     never_used = [m for m in messages if m.get("last_used_at") is None]
     cooled = [m for m in messages if m.get("last_used_at") and m["last_used_at"][:10] <= cutoff]
-    # in_cooldown are excluded
 
     if never_used:
         return never_used[0]
     if cooled:
-        # Pick the one with oldest last_used_at
         cooled.sort(key=lambda m: m["last_used_at"])
         return cooled[0]
     return None
 
 
 def mark_bad_day_message_used(msg_id: int) -> None:
-    """Mark a bad-day message as used (update last_used_at and use_count)."""
     profile = load_profile()
     messages = profile.get("bad_day_messages", [])
     for m in messages:
@@ -431,6 +437,5 @@ def mark_bad_day_message_used(msg_id: int) -> None:
 
 
 def get_all_bad_day_messages() -> list[dict]:
-    """Return all bad-day messages."""
     profile = load_profile()
     return profile.get("bad_day_messages", [])

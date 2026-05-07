@@ -29,10 +29,10 @@ AURA là AI life coach cá nhân hóa cho người 20–35 tuổi đang stuck, b
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS | port 3000 |
 | Backend | FastAPI (Python 3.12) | port 8000 |
 | AI Engine | Google Gemini 3.1 Flash Lite (preview) | via `google-genai` SDK |
-| Data Storage | JSON files (profile.json + history.json) | Single-user, trong backend/data/ |
+| Data Storage | JSON files (profile.json + history.json) | Single-user, trong backend/data/. Optional: Supabase via DATABASE_PROVIDER=supabase |
 | Container | Docker Compose (backend + frontend + nginx) | 1 lệnh khởi động |
 | Reverse Proxy | Nginx | user truy cập localhost:80 |
-| Deployment | Railway (2 services: backend + frontend) | Không dùng Nginx khi deploy |
+| Deployment | Vercel (frontend) + Railway (backend) | docs/VERCEL_DEPLOY.md |
 
 ---
 
@@ -48,17 +48,31 @@ User (localhost:80)
     /*      ──► Next.js :3000
 ```
 
-### Production (Railway)
+### Production (Vercel + Railway — khuyến nghị)
 ```
 User
-  ├──► Frontend (Railway service) :3000
-  │        │ fetch(NEXT_PUBLIC_API_URL)
-  │        ▼
-  └──► Backend (Railway service) :8000
-           │ CORS: ALLOWED_ORIGINS env var
-           ▼
-       Gemini API
+ ├──► Vercel Frontend (Next.js) — port 3000
+ │ │   /api/* → proxy to BACKEND_ORIGIN env var
+ │ ▼
+ └──► Railway Backend (FastAPI) — port 8000
+      CORS: ALLOWED_ORIGINS env var
+      ▼
+      Gemini API
 ```
+
+### Production (Railway only — legacy)
+```
+User
+ ├──► Frontend (Railway service) :3000
+ │        │ fetch(NEXT_PUBLIC_API_URL)
+ │        ▼
+ └──► Backend (Railway service) :8000
+            │ CORS: ALLOWED_ORIGINS env var
+            ▼
+        Gemini API
+```
+
+> **Deployment note:** Backend phải deploy riêng (Railway). Không deploy lên Vercel Python Functions vì pipeline morning chạy 60-120s (vượt giới hạn serverless) và Vercel không hỗ trợ persistent filesystem cho profile.json/history.json. Xem `docs/VERCEL_DEPLOY.md`.
 
 ### Backend pipeline 4 agent (buổi sáng)
 ```

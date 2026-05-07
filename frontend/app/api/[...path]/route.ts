@@ -5,10 +5,12 @@
  * The morning pipeline calls 3 Gemini agents sequentially and can take 60-120s,
  * which exceeds the default rewrite proxy timeout (~30s).
  *
- * Railway deployment: set BACKEND_ORIGIN env var on the frontend service.
- *   Private networking : http://<backend-service-name>.railway.internal
- *   Public URL (fallback): https://<backend-service>.up.railway.app
- * Local Docker Compose : falls back to http://backend:8000 automatically.
+ * Deployment targets:
+ *   Railway        : set BACKEND_ORIGIN env var on the frontend service
+ *                    (e.g. https://aura-backend.up.railway.app)
+ *   Vercel         : set BACKEND_ORIGIN env var to your Railway/public backend URL
+ *   Local Docker   : falls back to http://backend:8000 automatically
+ *   Local dev (no Docker): set BACKEND_ORIGIN=http://localhost:8000
  */
 
 const API_ORIGIN = process.env.BACKEND_ORIGIN ?? 'http://backend:8000'
