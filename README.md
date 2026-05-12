@@ -9,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat&logo=railway&logoColor=white)
 
-**Live demo:** https://aura-production-e715.up.railway.app
+**Live demo:** https://aura-one-beta.vercel.app/morning
 
 ---
 
