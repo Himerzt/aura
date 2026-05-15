@@ -523,5 +523,230 @@
       "pattern_detected": true,
       "tomorrow_question": "Khi nhìn lại chuỗi 12 ngày vừa qua, yếu tố nào đã giúp bạn duy trì sự kiên định ngay cả trong những ngày cảm thấy áp lực nhất?"
     }
+  },
+  "2026-05-11": {
+    "morning": {
+      "user_input": "Hôm qua đi ăn với bạn nên ăn nhiều hơn dự tính. Sáng nay hơi nặng bụng và thấy có lỗi, kiểu mất công mấy ngày trước rồi giờ phá hết.",
+      "mood_state": "overwhelmed",
+      "energy_level": 3,
+      "pattern": "Social eating guilt after a weekend meal, with all-or-nothing thinking",
+      "framework": "self_compassion",
+      "explanation": "Đây là vòng lặp xấu hổ sau một bữa ăn lệch kế hoạch. Một bữa ăn không xóa đi chuỗi hành động tốt đã có. Hôm nay ưu tiên quay lại nhịp nhẹ, không phạt bản thân.",
+      "tasks": [
+        {
+          "title": "Viết lại một câu tự nói tử tế sau bữa ăn lệch kế hoạch",
+          "implementation": "Sau cà phê sáng, tôi mở Notes và viết đúng 1 câu: một bữa ăn không quyết định cả hành trình.",
+          "estimated_minutes": 5,
+          "difficulty": "very_easy",
+          "completed": true,
+          "post_emotion": "relieved",
+          "friction": null,
+          "first_action_at": "2026-05-11T08:07:00",
+          "first_action_delay_minutes": 7,
+          "replaced_from": null,
+          "created_at": "2026-05-11T08:00:00"
+        },
+        {
+          "title": "Đi bộ 10 phút sau bữa trưa, không bù trừ bằng nhịn ăn",
+          "implementation": "Ngay khi ăn trưa xong, tôi đi bộ nhẹ 10 phút quanh văn phòng rồi uống nước.",
+          "estimated_minutes": 10,
+          "difficulty": "easy",
+          "completed": true,
+          "post_emotion": "neutral",
+          "friction": null,
+          "first_action_at": "2026-05-11T12:38:00",
+          "first_action_delay_minutes": 278,
+          "replaced_from": null,
+          "created_at": "2026-05-11T08:00:00"
+        }
+      ]
+    },
+    "evening": {
+      "user_input": "Sáng vẫn hơi tự trách nhưng viết câu đó xong dịu xuống. Trưa đi bộ được, tối ăn bình thường chứ không nhịn để bù. Cảm giác mình không bị kéo vào vòng tội lỗi như trước.",
+      "summary": "Ngày phục hồi sau social eating: nhận ra shame spiral sớm, quay lại bằng self-compassion và một hành động nhỏ thay vì cực đoan hóa ăn uống.",
+      "pattern_detected": true,
+      "tomorrow_question": "Ngày mai nếu cân nặng hoặc cảm giác cơ thể chưa như ý, bạn muốn phản ứng tử tế thế nào?"
+    },
+    "streak_day": 18
+  },
+  "2026-05-12": {
+    "morning": {
+      "user_input": "Ngủ khá hơn, sáng thấy nhẹ người. Hôm qua không hoàn hảo nhưng không bỏ cuộc. Hôm nay muốn tận dụng năng lượng này để chuẩn bị bữa ăn và tập nhẹ.",
+      "mood_state": "energized",
+      "energy_level": 7,
+      "pattern": "Momentum returning after a compassionate reset",
+      "framework": "progress_principle",
+      "explanation": "Năng lượng đang lên sau khi bạn không tự phạt mình. Progress Principle hợp hôm nay: tạo vài bằng chứng cụ thể rằng hệ thống vẫn đang chạy.",
+      "tasks": [
+        {
+          "title": "Chuẩn bị sẵn 2 phần protein cho trưa và tối",
+          "implementation": "Trước 9h, tôi luộc trứng hoặc chuẩn bị ức gà/cá hộp để bữa chính không bị quyết định bởi đói quá.",
+          "estimated_minutes": 20,
+          "difficulty": "medium",
+          "completed": true,
+          "post_emotion": "relieved",
+          "friction": null,
+          "first_action_at": "2026-05-12T07:50:00",
+          "first_action_delay_minutes": 20,
+          "replaced_from": null,
+          "created_at": "2026-05-12T07:30:00"
+        },
+        {
+          "title": "Tập 20 phút full-body nhẹ",
+          "implementation": "Sau giờ làm, tôi thay đồ tập ngay trước khi tắm tối và tập 3 vòng squat, push-up nghiêng, plank.",
+          "estimated_minutes": 20,
+          "difficulty": "medium",
+          "completed": true,
+          "post_emotion": "energized",
+          "friction": null,
+          "first_action_at": "2026-05-12T18:25:00",
+          "first_action_delay_minutes": 655,
+          "replaced_from": null,
+          "created_at": "2026-05-12T07:30:00"
+        },
+        {
+          "title": "Log bữa ăn trong app ngay sau bữa tối",
+          "implementation": "Ăn tối xong đặt chén xuống là mở app log nhanh, không cần chính xác tuyệt đối.",
+          "estimated_minutes": 5,
+          "difficulty": "easy",
+          "completed": false,
+          "post_emotion": null,
+          "friction": "forgot",
+          "first_action_at": null,
+          "first_action_delay_minutes": null,
+          "replaced_from": null,
+          "created_at": "2026-05-12T07:30:00"
+        }
+      ]
+    },
+    "evening": {
+      "user_input": "Tập được 20 phút nên rất vui. Chuẩn bị protein giúp đỡ ăn vặt hẳn. Quên log app sau bữa tối, nhưng lần này không thấy nó là thất bại lớn.",
+      "summary": "Ngày năng lượng cao: hoàn thành chuẩn bị bữa ăn và tập luyện. Miss một task nhỏ nhưng không kéo theo self-criticism, cho thấy khả năng phục hồi đang tốt hơn.",
+      "pattern_detected": false,
+      "tomorrow_question": "Task nào đáng được giữ lại như một anchor vì nó giúp cả ngày dễ hơn rõ rệt?"
+    },
+    "streak_day": 19
+  },
+  "2026-05-13": {
+    "morning": {
+      "user_input": "Hôm nay lịch họp dày từ sáng tới chiều. Mình sợ đến cuối ngày đói quá lại đặt đồ ăn nhanh, và chắc không có thời gian tập.",
+      "mood_state": "anxious",
+      "energy_level": 4,
+      "pattern": "Meeting-heavy day disrupting food and movement plans",
+      "framework": "implementation_intention",
+      "explanation": "Đây không phải thiếu ý chí mà là ngày có nhiều ràng buộc môi trường. Implementation Intention giúp đặt trước điểm hành động: nếu họp chen kín, thì vẫn có lựa chọn nhỏ đã chuẩn bị.",
+      "tasks": [
+        {
+          "title": "Đặt sẵn bữa trưa cân bằng trước 10h30",
+          "implementation": "Ngay sau meeting đầu tiên, tôi đặt món có protein và rau trước 10h30 để không quyết định khi quá đói.",
+          "estimated_minutes": 5,
+          "difficulty": "easy",
+          "completed": true,
+          "post_emotion": "relieved",
+          "friction": null,
+          "first_action_at": "2026-05-13T10:18:00",
+          "first_action_delay_minutes": 128,
+          "replaced_from": null,
+          "created_at": "2026-05-13T08:10:00"
+        },
+        {
+          "title": "Đi bộ 7 phút giữa hai cuộc họp",
+          "implementation": "Khi meeting 15h kết thúc, tôi không mở Slack ngay mà đi bộ quanh tầng 7 phút.",
+          "estimated_minutes": 7,
+          "difficulty": "very_easy",
+          "completed": false,
+          "post_emotion": null,
+          "friction": "distracted",
+          "first_action_at": null,
+          "first_action_delay_minutes": null,
+          "replaced_from": null,
+          "created_at": "2026-05-13T08:10:00"
+        }
+      ]
+    },
+    "evening": {
+      "user_input": "Đặt bữa trưa trước nên không bị đặt đồ chiên. Nhưng chiều họp kéo dài, xong mở Slack luôn nên quên đi bộ. Mệt, nhưng ít nhất phần ăn uống không vỡ.",
+      "summary": "Ngày áp lực cao: kế hoạch ăn uống được bảo vệ nhờ đặt trước, còn movement bị trôi vì context switching. Dữ liệu cho thấy cần cue rõ hơn giữa các meeting.",
+      "pattern_detected": true,
+      "tomorrow_question": "Ngày mai có thể đặt cue nào ngay sau meeting để không bị Slack kéo đi mất?"
+    },
+    "streak_day": 20
+  },
+  "2026-05-14": {
+    "morning": {
+      "user_input": "Sáng nay dậy rất đuối, không buồn làm gì. Không hẳn buồn, chỉ thấy trống và nặng. Muốn bỏ qua mọi thứ một ngày.",
+      "mood_state": "numb",
+      "energy_level": 2,
+      "pattern": "Low-energy flatness after accumulated work stress",
+      "framework": "behavioral_activation",
+      "explanation": "Cơ thể có vẻ đang đòi giảm tải sau vài ngày căng. Behavioral Activation hôm nay không nhằm năng suất, chỉ cần một hành động rất nhỏ để giữ liên hệ với bản thân.",
+      "tasks": [
+        {
+          "title": "Mở cửa sổ và đứng hít thở 3 phút",
+          "implementation": "Sau khi rửa mặt, tôi mở cửa sổ, đứng yên 3 phút và chỉ chú ý hơi thở, không cầm điện thoại.",
+          "estimated_minutes": 3,
+          "difficulty": "very_easy",
+          "completed": true,
+          "post_emotion": "neutral",
+          "friction": null,
+          "first_action_at": "2026-05-14T08:45:00",
+          "first_action_delay_minutes": 15,
+          "replaced_from": null,
+          "created_at": "2026-05-14T08:30:00"
+        }
+      ]
+    },
+    "evening": {
+      "user_input": "Hôm nay đúng là low-energy. Chỉ làm được task mở cửa sổ, còn lại làm việc tối thiểu. Nhưng không ăn vặt quá nhiều và không nằm lướt điện thoại cả tối.",
+      "summary": "Ngày năng lượng thấp nhưng không mất nhịp hoàn toàn. Một task rất nhỏ giúp giữ streak tinh thần, đồng thời giảm kỳ vọng để tránh shame spiral.",
+      "pattern_detected": false,
+      "tomorrow_question": "Khi năng lượng chỉ ở mức 2/10, dấu hiệu nhỏ nào cho biết bạn vẫn đang chăm sóc mình?"
+    },
+    "streak_day": 21
+  },
+  "2026-05-15": {
+    "morning": {
+      "user_input": "Hôm qua nghỉ nhẹ nên hôm nay đỡ hơn. Nhận ra cái hay quên nhất là log bữa tối. Mình muốn gắn nó vào việc tắm tối vì đó là anchor khá chắc.",
+      "mood_state": "stable",
+      "energy_level": 6,
+      "pattern": "Stabilizing routine by stacking food logging onto an existing evening anchor",
+      "framework": "habit_stacking",
+      "explanation": "Bạn đang chuyển từ cố nhớ sang thiết kế hệ thống. Habit Stacking phù hợp: sau anchor tắm tối, log bữa ăn 2 phút trước khi lên giường.",
+      "tasks": [
+        {
+          "title": "Đi bộ 15 phút sau cà phê sáng",
+          "implementation": "Uống cà phê xong, tôi mang giày ngay và đi bộ 15 phút trước khi mở laptop.",
+          "estimated_minutes": 15,
+          "difficulty": "easy",
+          "completed": true,
+          "post_emotion": "relieved",
+          "friction": null,
+          "first_action_at": "2026-05-15T08:02:00",
+          "first_action_delay_minutes": 17,
+          "replaced_from": null,
+          "created_at": "2026-05-15T07:45:00"
+        },
+        {
+          "title": "Log bữa tối ngay sau khi tắm",
+          "implementation": "Tắm tối xong, trước khi lên giường, tôi mở app và log bữa tối trong 2 phút.",
+          "estimated_minutes": 2,
+          "difficulty": "very_easy",
+          "completed": true,
+          "post_emotion": "neutral",
+          "friction": null,
+          "first_action_at": "2026-05-15T21:35:00",
+          "first_action_delay_minutes": 830,
+          "replaced_from": null,
+          "created_at": "2026-05-15T07:45:00"
+        }
+      ]
+    },
+    "evening": {
+      "user_input": "Đi bộ lại bình thường. Log sau khi tắm dễ hơn hẳn vì không phải nhớ ngay lúc ăn. Cảm giác hệ thống đang tìm được chỗ cài vào đời sống thật.",
+      "summary": "Ngày ổn định: habit stacking giúp task hay quên trở nên tự nhiên hơn. Dữ liệu cá nhân hóa mới: tắm tối là anchor mạnh cho food logging.",
+      "pattern_detected": false,
+      "tomorrow_question": "Anchor tắm tối còn có thể gắn thêm thói quen nhỏ nào mà không làm bạn thấy quá tải?"
+    },
+    "streak_day": 22
   }
 }
