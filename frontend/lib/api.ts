@@ -276,3 +276,13 @@ export function markBadDayMessageUsed(
 export function getBadDayMessages(): Promise<{ messages: BadDayMessageEntry[] }> {
   return json('/api/bad-day-messages')
 }
+
+// ── RAG Lab ──────────────────────────────────────────────────────────────────
+import type { RagResponse } from './types'
+
+export function queryRag(question: string): Promise<RagResponse> {
+  return json<RagResponse>('/api/rag/query', {
+    method: 'POST',
+    body: JSON.stringify({ question }),
+  })
+}

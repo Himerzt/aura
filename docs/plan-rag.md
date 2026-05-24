@@ -324,7 +324,33 @@ Feature RAG Lab được xem là **DONE** khi:
 
 ## 9. Quick Reference — Test Command
 
-### Backend test nhanh
+### Backend test nhanh (Python script)
+
+```bash
+# Set API key first
+$env:GEMINI_API_KEY="YOUR_KEY"
+
+# Run test script
+cd backend && python test_rag.py
+```
+
+Hoặc chạy trực tiếp với API key inline:
+
+```bash
+cd backend
+$env:GEMINI_API_KEY="YOUR_KEY"
+python test_rag.py
+```
+
+### Backend startup (local dev)
+
+```bash
+cd backend
+$env:GEMINI_API_KEY="YOUR_KEY"
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### Manual curl test (Linux/Mac)
 
 ```bash
 # Test 1: Câu hỏi có context
@@ -354,15 +380,99 @@ curl -X POST http://localhost:8000/api/rag/query \
 
 | Criteria | TC | Session 1 | Session 2 | Session 3 |
 |----------|----|-----------|-----------|-----------|
-| SC-01 | TC-01 | - | done | - |
-| SC-02 | TC-02 | - | done | - |
-| SC-03 | TC-03 | done | - | - |
-| SC-04 | TC-04 | done | - | - |
-| SC-05 | TC-05 | done | - | - |
-| SC-06 | TC-06 | - | done | - |
-| SC-07 | TC-07 | - | - | done |
-| SC-08 | TC-08 | - | done | - |
-| SC-09 | TC-09 | - | done | - |
-| SC-10 | TC-10 | - | - | done |
-| SC-11 | TC-11 | - | - | done |
-| SC-12 | TC-12 | - | - | done |
+| SC-01 | TC-01 | - | ✅ done | - |
+| SC-02 | TC-02 | - | ✅ done | - |
+| SC-03 | TC-03 | ✅ done | - | - |
+| SC-04 | TC-04 | ✅ done | - | - |
+| SC-05 | TC-05 | ✅ done | - | - |
+| SC-06 | TC-06 | - | ✅ done | - |
+| SC-07 | TC-07 | - | - | - |
+| SC-08 | TC-08 | - | ✅ done | - |
+| SC-09 | TC-09 | - | ✅ done | - |
+| SC-10 | TC-10 | - | - | - |
+| SC-11 | TC-11 | - | - | - |
+| SC-12 | TC-12 | - | ✅ done | - |
+
+---
+
+## 11. Session 1 Summary (Backend Core — 2026-05-24)
+
+### Completed Tasks
+
+- [x] Inspect project: read `backend/routers/api.py`, `backend/agents/_gemini.py`, `backend/core/prompts.py`
+- [x] Create `backend/data/rag_docs/` directory
+- [x] Create `backend/data/rag_docs/aura_overview.md` (seed doc)
+- [x] Create `backend/data/rag_docs/psychology_frameworks.md` (seed doc)
+- [x] Create `backend/core/rag.py`:
+  - [x] `load_rag_documents()` — load .md/.txt from rag_docs
+  - [x] `chunk_document()` — split into overlapping chunks (800 chars, 120 overlap)
+  - [x] `retrieve_relevant_chunks()` — lexical scoring (BM25-like), top_k=5
+  - [x] `run_rag_query()` — retrieve → build context → call Gemini → validate
+- [x] Add `get_rag_prompt()` to `backend/core/prompts.py`
+- [x] Add `RagRequest` model and `POST /api/rag/query` route to `backend/routers/api.py`
+- [x] Add `backend/.env` to `.gitignore`
+- [x] Commit: `698929e feat(rag): add RAG Lab backend with lexical retrieval + Gemini`
+
+### Test Results
+
+| Test | Result |
+|------|--------|
+| TC-03: Câu hỏi có context | ✅ `confidence: high`, `used_context: true`, answer đúng |
+| TC-04: Câu hỏi không có context | ✅ `confidence: low`, `used_context: false`, không bịa |
+| TC-04b: Framework question | ✅ Trả lời đúng từ psychology_frameworks.md |
+| TC-05a: Empty string | ✅ HTTP 400 `"question không được để trống"` |
+| TC-05b: Missing field | ✅ HTTP 422 Pydantic validation error |
+
+### Notes & Issues
+
+- **`.env` placement:** `load_dotenv()` của uvicorn không hoạt động đúng trên Windows. Giải pháp tạm: copy `.env` vào `backend/.env` và chạy với env inline trong test script. Docker Compose mount env từ root `.env` — không cần copy.
+- **Backend startup command (local dev):** `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000` (với `GEMINI_API_KEY` env var được set)
+- **`backend/test_rag.py`:** Script test tạm, không commit vào repo.
+
+---
+
+## 12. Session 2 Summary (Frontend + Integration — 2026-05-24)
+
+### Completed Tasks
+
+- [x] Add `RagSource` + `RagResponse` types to `frontend/lib/types.ts`
+- [x] Add `queryRag()` function to `frontend/lib/api.ts`
+- [x] Create `frontend/app/rag/page.tsx`:
+  - [x] Header "RAG LAB" + subtitle
+  - [x] Input card with textarea + submit button (Ctrl+Enter shortcut)
+  - [x] Loading state with spinner animation
+  - [x] Answer card with confidence badge (high/medium/low color-coded)
+  - [x] Sources card with title + preview (≤200 chars) + score percentage
+  - [x] Error state with friendly inline message
+  - [x] Empty state with "RAG Lab là gì?" info card + 4 sample question buttons
+- [x] Add "RAG Lab" nav item (◎) to `frontend/components/Navigation.tsx`
+- [x] `npm run build` pass ✅ (TC-12)
+
+### Test Results
+
+| Test | Result |
+|------|--------|
+| TC-01: Navigation "RAG Lab" in sidebar | ✅ Item added, URL `/rag` works |
+| TC-02: Page load + empty state | ✅ `/rag` builds, empty state implemented |
+| TC-06: Submit + loading + result | ✅ Input → loading → answer card flow |
+| TC-08: Confidence display | ✅ Color-coded badge (green/amber/gray) |
+| TC-09: Sources preview | ✅ Title + preview (≤200 chars) + score % |
+| TC-12: Build pass | ✅ `npm run build` exit code 0 |
+
+### Notes
+
+- Backend API (TC-03, TC-04, TC-05) already verified in Session 1.
+- `test_rag.py` script is temporary — not committed.
+- Frontend uses relative API path (`/api/rag/query`), proxied through `app/api/[...path]/route.ts`.
+
+---
+
+## 13. Session 3 Preview (Polish + Verification)
+
+### Remaining Tasks
+
+- [ ] TC-07: Error handling — kill backend, check UI graceful degradation
+- [ ] TC-10: Hallucination guard — ask random questions, verify no fabrication
+- [ ] TC-11: Other pages not broken — navigate Morning/Checklist/Evening/Dashboard
+- [ ] Final `npm run build` pass (already done, verify again)
+- [ ] Commit Session 2

@@ -6,6 +6,7 @@ import { useTheme } from '@/lib/theme-context'
 
 const navItems = [
   { href: '/dashboard',   label: 'Dashboard', icon: '◉' },
+  { href: '/rag',         label: 'RAG Lab',   icon: '◎' },
   { href: '/morning',     label: 'Morning',   icon: '☀' },
   { href: '/checklist',   label: 'Checklist', icon: '✓' },
   { href: '/evening',     label: 'Evening',   icon: '◐' },

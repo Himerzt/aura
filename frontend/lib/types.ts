@@ -136,3 +136,19 @@ export interface Hotline {
   number: string
   available: string
 }
+
+// ── RAG Lab ──────────────────────────────────────────────────────────────────
+export interface RagSource {
+  chunk_id: string
+  content: string
+  title: string
+  score: number
+  preview: string
+}
+
+export interface RagResponse {
+  answer: string
+  sources: RagSource[]
+  confidence: 'high' | 'medium' | 'low'
+  used_context: boolean
+}
