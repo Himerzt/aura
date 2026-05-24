@@ -148,13 +148,12 @@ def retrieve_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
             if term in _tokenize(chunk["title"]):
                 score += 1.0
 
-        # Normalize by question length to make threshold meaningful
+        # Normalize by question length so score is 0..1 (fraction of terms found)
         normalized_score = score / max(len(question_terms), 1)
         chunk["score"] = normalized_score
 
-    # Filter by threshold
-    threshold = MIN_SCORE_THRESHOLD * len(question_terms)
-    filtered = [c for c in all_chunks if c["score"] >= threshold]
+    # Filter: keep chunks where at least MIN_SCORE_THRESHOLD (default 0.3) fraction of terms match
+    filtered = [c for c in all_chunks if c["score"] >= MIN_SCORE_THRESHOLD]
 
     # Sort and take top_k
     filtered.sort(key=lambda c: c["score"], reverse=True)

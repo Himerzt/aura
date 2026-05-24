@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 from core.limiter import limiter
 
 from core.memory import (
@@ -72,7 +72,14 @@ class EveningRequest(BaseModel):
 
 
 class RagRequest(BaseModel):
-    question: str
+    question: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def strip_question(self) -> "RagRequest":
+        if not self.question.strip():
+            raise ValueError("question không được để trống")
+        self.question = self.question.strip()
+        return self
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
