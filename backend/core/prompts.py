@@ -288,3 +288,35 @@ EXAMPLE tone (do NOT copy this — write something unique based on actual data):
 "Mình nhớ hôm thứ Ba bạn viết 'hôm nay mệt quá, không muốn làm gì' — nhưng rồi bạn vẫn tick được cái task đi bộ 10 phút. Cái đó không nhỏ đâu. Mình muốn bạn biết là mình thấy."
 
 Respond in JSON only."""
+
+
+# ── RAG Agent ─────────────────────────────────────────────────────────────────
+
+def get_rag_prompt(context: str, question: str) -> str:
+    return f"""Dựa trên context được cung cấp bên dưới, hãy trả lời câu hỏi của người dùng.
+
+**Quy tắc quan trọng:**
+- Chỉ trả lời dựa trên context được cung cấp.
+- Nếu context không đủ để trả lời, hãy nói rõ: "Mình chưa tìm thấy đủ dữ liệu trong tài liệu hiện có để trả lời chắc chắn."
+- Không bịa thông tin không có trong context.
+- Trả lời bằng tiếng Việt.
+- Trả lời ngắn gọn, đúng trọng tâm.
+
+**Context:**
+{context}
+
+**Câu hỏi:**
+{question}
+
+Output format (strict JSON, no markdown, no explanation):
+{{
+  "answer": "<câu trả lời tiếng Việt dựa trên context, hoặc thông báo không đủ dữ liệu>",
+  "confidence": "<high|medium|low>"
+}}
+
+confidence:
+- high: context chứa thông tin trực tiếp trả lời câu hỏi
+- medium: context có liên quan nhưng không đầy đủ
+- low: context không liên quan hoặc không đủ dữ liệu
+
+Respond in JSON only."""

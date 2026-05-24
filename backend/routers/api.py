@@ -39,6 +39,7 @@ from core.pattern_alert import detect_risk_pattern
 from agents.reflection import run_reflection
 from agents.task_generator import run_task_generator
 from agents.weekly_letter import run_weekly_letter
+from core.rag import run_rag_query
 
 router = APIRouter(prefix="/api", tags=["aura"])
 
@@ -68,6 +69,10 @@ class MorningRequest(BaseModel):
 class EveningRequest(BaseModel):
     user_input: str
     completed_task_ids: list[int] = []
+
+
+class RagRequest(BaseModel):
+    question: str
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -501,3 +506,20 @@ async def weekly_insight():
         "days_remaining": 0,
         "insight": insights[-1] if insights else None,
     }
+
+
+# ── RAG Lab ──────────────────────────────────────────────────────────────────
+
+@router.post("/rag/query")
+async def rag_query(req: RagRequest):
+    """Answer user question using RAG on AURA's internal documents."""
+    question = req.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="question không được để trống")
+
+    try:
+        result = await run_rag_query(question)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"AI pipeline lỗi: {str(e)}")
+
+    return result
