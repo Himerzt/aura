@@ -199,20 +199,20 @@ Exit code phải = 0.
 **Mục tiêu:** Có endpoint `/api/rag/query` chạy được, pass TC-03, TC-04, TC-05.
 
 **Tasks:**
-- [ ] Inspect project: đọc `backend/routers/api.py`, `backend/agents/_gemini.py`, `backend/core/prompts.py`
-- [ ] Tạo `backend/data/rag_docs/` directory
-- [ ] Tạo `backend/data/rag_docs/aura_overview.md` (seed doc)
-- [ ] Tạo `backend/data/rag_docs/psychology_frameworks.md` (seed doc)
-- [ ] Tạo `backend/core/rag.py`:
-  - [ ] `load_rag_documents()`
-  - [ ] `chunk_document()`
-  - [ ] `retrieve_relevant_chunks()` — lexical scoring
-  - [ ] `run_rag_query()` — gọi Gemini
-- [ ] Thêm RAG prompt vào `backend/core/prompts.py`
-- [ ] Thêm route `POST /api/rag/query` vào `backend/routers/api.py`
-- [ ] Verify: chạy `curl` test TC-03, TC-04, TC-05
+- [x] Inspect project: đọc `backend/routers/api.py`, `backend/agents/_gemini.py`, `backend/core/prompts.py`
+- [x] Tạo `backend/data/rag_docs/` directory
+- [x] Tạo `backend/data/rag_docs/aura_overview.md` (seed doc)
+- [x] Tạo `backend/data/rag_docs/psychology_frameworks.md` (seed doc)
+- [x] Tạo `backend/core/rag.py`:
+  - [x] `load_rag_documents()`
+  - [x] `chunk_document()`
+  - [x] `retrieve_relevant_chunks()` — lexical scoring
+  - [x] `run_rag_query()` — gọi Gemini
+- [x] Thêm RAG prompt vào `backend/core/prompts.py`
+- [x] Thêm route `POST /api/rag/query` vào `backend/routers/api.py`
+- [x] Verify: chạy `curl` test TC-03, TC-04, TC-05
 
-**Target:** Backend pass TC-03, TC-04, TC-05.
+**Target:** Backend pass TC-03, TC-04, TC-05. ✅ DONE
 
 ---
 
@@ -220,20 +220,20 @@ Exit code phải = 0.
 **Mục tiêu:** Có page `/rag` chạy được, pass TC-01, TC-02, TC-06, TC-08, TC-09.
 
 **Tasks:**
-- [ ] Thêm types vào `frontend/lib/types.ts` (`RagSource`, `RagResponse`)
-- [ ] Thêm `queryRag()` vào `frontend/lib/api.ts`
-- [ ] Tạo `frontend/app/rag/page.tsx`:
-  - [ ] Header "RAG Lab" + subtitle
-  - [ ] Input card (textarea + button)
-  - [ ] Loading state
-  - [ ] Answer card với confidence badge
-  - [ ] Sources card với preview
-  - [ ] Error state
-  - [ ] Empty state
-- [ ] Thêm nav item "RAG Lab" vào `frontend/components/Navigation.tsx`
-- [ ] Verify: mở browser, pass TC-01, TC-02, TC-06, TC-08, TC-09
+- [x] Thêm types vào `frontend/lib/types.ts` (`RagSource`, `RagResponse`)
+- [x] Thêm `queryRag()` vào `frontend/lib/api.ts`
+- [x] Tạo `frontend/app/rag/page.tsx`:
+  - [x] Header "RAG Lab" + subtitle
+  - [x] Input card (textarea + button)
+  - [x] Loading state
+  - [x] Answer card với confidence badge
+  - [x] Sources card với preview
+  - [x] Error state
+  - [x] Empty state
+- [x] Thêm nav item "RAG Lab" vào `frontend/components/Navigation.tsx`
+- [x] Verify: mở browser, pass TC-01, TC-02, TC-06, TC-08, TC-09
 
-**Target:** UI chạy đẹp, integration hoạt động.
+**Target:** UI chạy đẹp, integration hoạt động. ✅ DONE
 
 ---
 
@@ -244,10 +244,10 @@ Exit code phải = 0.
 - [ ] TC-07: Error handling — tắt backend, kiểm tra UI graceful
 - [ ] TC-10: Hallucination check — hỏi câu vặt, xem answer
 - [ ] TC-11: Navigate các page khác, check no crash
-- [ ] TC-12: `npm run build` pass
-- [ ] TC-01 (lại): Nav item còn đó
+- [x] TC-12: `npm run build` pass ✅ (Docker build đã pass, 2026-05-24)
+- [ ] TC-01 (lại): Nav item còn đó — verify trên Docker
 - [ ] Fix any remaining issues
-- [ ] Commit code
+- [ ] Commit code Session 3
 
 **Target:** Tất cả 12 TC pass, green build.
 
@@ -283,9 +283,9 @@ Exit code phải = 0.
 |------|----------|--------|------------|
 | Gemini API key hết quota/test limit | Thấp | Cao | Backend có try/except, fallback message |
 | Seed doc content quá ngắn → TC-04 fail | Trung bình | Thấp | Thêm 2-3 docs nếu cần |
-| Nav item conflict với existing route | Thấp | Cao | Kiểm tra `app/` folder trước |
+| Nav item conflict với existing route | ~~Thấp~~ Đã verify | ~~Cao~~ Không là issue | ✅ Đã kiểm tra `app/` folder, không conflict |
 | Frontend build lỗi vì TypeScript strict | Trung bình | Trung bình | Dùng `// @ts-ignore` nếu cần nhanh, fix sau |
-| CORS issue khi frontend gọi backend | Thấp | Cao | Kiểm tra `ALLOWED_ORIGINS` env var |
+| CORS issue khi frontend gọi backend | ~~Thấp~~ Đã verify | ~~Cao~~ Không là issue | ✅ Docker/nginx proxy dùng relative path `/api/*` |
 
 ---
 
@@ -293,8 +293,8 @@ Exit code phải = 0.
 
 - [x] Project AURA MVP hoàn thành (frontend + backend + Gemini)
 - [x] Docker Compose hoặc local dev environment sẵn sàng
-- [ ] `.env` có `GEMINI_API_KEY` (phải có, không có thì fail ngay)
-- [ ] `npm run build` trên frontend đang pass (baseline trước khi thêm RAG)
+- [x] `.env` có `GEMINI_API_KEY` ✅ (đã verify)
+- [x] `npm run build` trên frontend đang pass (baseline trước khi thêm RAG) ✅
 
 **Trước Session 1:** verify baseline:
 
