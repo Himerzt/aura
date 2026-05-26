@@ -448,3 +448,5 @@ function RagEmptyState({ onSampleClick }: { onSampleClick: (q: string) => void }
     </div>
   )
 }
+
+// Done 26/05/2026

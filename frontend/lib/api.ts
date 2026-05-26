@@ -286,3 +286,5 @@ export function queryRag(question: string): Promise<RagResponse> {
     body: JSON.stringify({ question }),
   })
 }
+
+// Done 26/05/2026

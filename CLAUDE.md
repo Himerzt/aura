@@ -12,7 +12,7 @@ AURA là AI life coach cá nhân hóa cho người 20–35 tuổi đang stuck, b
 
 **Khác biệt cốt lõi:** Không phải chatbot motivational. AURA nhận diện pattern tâm lý cụ thể (learned helplessness, shame spiral, analysis paralysis...) rồi chọn đúng framework can thiệp — mỗi ngày khác nhau tùy trạng thái thực tế của người dùng.
 
-**Trạng thái hiện tại:** MVP hoàn thành (Phần 1–10). Đang trong tuần polish để demo portfolio cho phỏng vấn.
+**Trạng thái hiện tại:** MVP hoàn thành (Phần 1–10) + RAG Lab feature (2026-05-24). Đang trong tuần polish để demo portfolio cho phỏng vấn.
 
 **Quyết định kiến trúc quan trọng (2026-04-22):**
 - **Single-user MVP** — không có auth, không có multi-user. Đây là quyết định có chủ đích, không phải thiếu sót.
@@ -247,10 +247,11 @@ AURA_NEW/
 │
 ├── docs/
 │   ├── plan.md
+│   ├── plan-rag.md             ← RAG Lab plan chi tiết (3 sessions)
 │   ├── design-system.md
 │   ├── api-spec.md
-│   ├── review/                   ← subagent review reports
-│   └── screenshots/              ← cho README
+│   ├── review/                 ← subagent review reports
+│   └── screenshots/            ← cho README
 │
 ├── backend/
 │   ├── Dockerfile
@@ -270,17 +271,19 @@ AURA_NEW/
 │   │   ├── memory_recall.py
 │   │   ├── pattern_alert.py
 │   │   ├── prompts.py
-│   │   └── pipeline.py
+│   │   ├── pipeline.py
+│   │   └── rag.py              ← RAG Lab: lexical retrieval + Gemini grounded answer
+│   ├── data/
+│   │   ├── profile.json
+│   │   ├── history.json
+│   │   └── rag_docs/           ← seed docs cho RAG (aura_overview.md, psychology_frameworks.md)
 │   ├── routers/
 │   │   ├── __init__.py
 │   │   └── api.py
 │   ├── scripts/
-│   │   └── seed_demo.py          ← tạo 10 ngày demo data
-│   ├── tests/
-│   │   └── test_streak_shield.py
-│   └── data/
-│       ├── profile.json
-│       └── history.json
+│   │   └── seed_demo.py         ← tạo 10 ngày demo data
+│   └── tests/
+│       └── test_streak_shield.py
 │
 └── frontend/
     ├── Dockerfile
@@ -288,13 +291,14 @@ AURA_NEW/
     ├── tailwind.config.ts
     ├── app/
     │   ├── layout.tsx
-    │   ├── page.tsx              ← redirect: chưa onboard → /onboarding, đã onboard → /morning
+    │   ├── page.tsx             ← redirect: chưa onboard → /onboarding, đã onboard → /morning
     │   ├── globals.css
     │   ├── onboarding/page.tsx
     │   ├── morning/page.tsx
     │   ├── checklist/page.tsx
     │   ├── evening/page.tsx
-    │   └── dashboard/page.tsx
+    │   ├── dashboard/page.tsx
+    │   └── rag/page.tsx        ← RAG Lab: hỏi thử AURA dựa trên tài liệu nội bộ
     ├── components/
     │   ├── Navigation.tsx
     │   ├── ui/
@@ -386,7 +390,7 @@ AURA_NEW/
 ### Animation Library (globals.css)
 
 | Keyframe | Utility class | Dùng khi |
-|----------|---------------|----------|
+|----------|---------------|-----------|
 | `auraDrift`    | (auto, trong `.aura-bg`)  | Background 2 blob |
 | `auraJitter`   | (auto, `.mood-anxious`)   | Run rẩy mood anxious |
 | `gradientPan`  | `.gradient-text`          | Logo sweep |
@@ -433,7 +437,60 @@ Context `MoodProvider` (`lib/mood-context.tsx`) giữ `mood` hiện tại. `Mood
 
 ---
 
-## 10. Làm Việc Với Claude Code
+## 10. RAG Lab Feature
+
+**Route:** `/rag` — page mới trong navigation.
+
+### Cách hoạt động
+```
+User question
+    │
+    ▼
+POST /api/rag/query
+    │
+    ▼
+load_rag_documents() — load .md/.txt from backend/data/rag_docs/
+    │
+    ▼
+chunk_document() — split by paragraph, 800 chars, 120 overlap
+    │
+    ▼
+retrieve_relevant_chunks() — lexical BM25-like scoring, top 5
+    │
+    ▼
+_build_context() — gộp chunks thành context string
+    │
+    ▼
+get_rag_prompt() — grounded prompt với rules (tiếng Việt, không bịa)
+    │
+    ▼
+call_gemini() — Gemini 3.1 Flash Lite
+    │
+    ▼
+Return: { answer, sources[], confidence, used_context }
+```
+
+### Retrieval details
+- **Chunking:** paragraph-aware (split on `\n\n+`), 800 chars max, 120 chars overlap
+- **Scoring:** keyword match — count(query_terms ∩ chunk_terms) + title boost, normalized 0..1
+- **Threshold:** keep chunks with normalized_score ≥ 0.3
+- **No vector DB** — intentionally simple cho MVP demo
+
+### API spec
+```
+POST /api/rag/query
+Body: { "question": "string" }
+Response: {
+  "answer": "string (VI)",
+  "sources": [{ "title", "chunk_id", "preview", "score" }],
+  "confidence": "high | medium | low",
+  "used_context": boolean
+}
+```
+
+---
+
+## 11. Làm Việc Với Claude Code
 
 Xem `.claude/commands/` để biết các slash command có sẵn:
 - `/start-session` — đầu mỗi phiên làm việc
@@ -451,7 +508,7 @@ Xem `.claude/commands/` để biết các slash command có sẵn:
 
 ---
 
-## 11. Những Gì KHÔNG Cần Làm (v2 Roadmap)
+## 12. Những Gì KHÔNG Cần Làm (v2 Roadmap)
 
 Để tránh scope creep trong tuần polish:
 - ❌ Auth / multi-user
@@ -463,3 +520,4 @@ Xem `.claude/commands/` để biết các slash command có sẵn:
 - ❌ AI model fallback
 - ❌ Streaming response từ Gemini
 - ❌ Thêm test mới (42 tests hiện tại đủ cho MVP)
+- ❌ Vector DB cho RAG (lexical retrieval đủ cho MVP demo)

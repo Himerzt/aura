@@ -152,3 +152,5 @@ export interface RagResponse {
   confidence: 'high' | 'medium' | 'low'
   used_context: boolean
 }
+
+// Done 26/05/2026

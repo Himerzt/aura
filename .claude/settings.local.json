@@ -5,7 +5,25 @@
       "Bash(npx tsc *)",
       "Read(//c/Users/ADMIN/AppData/Local/Microsoft/WindowsApps/**)",
       "Bash(ls /c/Python3*/python.exe)",
-      "Read(//c/Users/ADMIN/**)"
+      "Read(//c/Users/ADMIN/**)",
+      "Bash(wc -l backend/**/*.py backend/core/*.py backend/agents/*.py backend/routers/*.py)",
+      "Bash(xargs grep *)",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(curl -s http://localhost:8000/api/streak)",
+      "Bash(curl -s http://localhost:8000/api/weekly-letter)",
+      "Bash(curl -s http://localhost:8000/api/pattern-radar?days=30)",
+      "Bash(curl -s http://localhost:80/dashboard)",
+      "Bash(cp backend/data/history.json backend/data/history.json.bak)",
+      "Bash(echo '{}')",
+      "Bash(curl -s http://localhost:8000/api/today)",
+      "Bash(curl -s http://localhost:8000/api/history)",
+      "Bash(curl -s http://localhost:8000/api/weekly-insight)",
+      "Bash(curl -s http://localhost:8000/api/energy-mood-matrix)",
+      "Bash(curl *)",
+      "Bash(npx next *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\('backend/data/history.json'\\)\\); print\\(list\\(data.keys\\(\\)\\)\\)\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Python/bin/python.exe *)"
     ]
   }
 }

@@ -243,3 +243,6 @@ async def run_rag_query(question: str) -> dict:
         "confidence": confidence,
         "used_context": used_context,
     }
+
+
+# Done 26/05/2026

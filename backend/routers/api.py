@@ -530,3 +530,5 @@ async def rag_query(req: RagRequest):
         raise HTTPException(status_code=502, detail=f"AI pipeline lỗi: {str(e)}")
 
     return result
+
+# Done 26/05/2026
