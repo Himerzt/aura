@@ -38,11 +38,11 @@ AURA là một pipeline 5 agent chạy tuần tự. Mỗi agent có một nhiệ
                         ▼
           ┌─────────────────────────┐
           │   Agent 1: Wellness     │
-          │   Check                 │
-          │                         │
-          │  → mood_state           │
-          │  → energy_level (1-10)  │
-          │  → risk_flag            │
+          │   Check                │
+          │                        │
+          │  → mood_state          │
+          │  → energy_level (1-10) │
+          │  → risk_flag           │
           └──────────┬──────────────┘
                      │
           risk_flag? ├──YES──► Crisis Support Mode
@@ -53,29 +53,29 @@ AURA là một pipeline 5 agent chạy tuần tự. Mỗi agent có một nhiệ
           ┌─────────────────────────┐
           │   Agent 2: Psychology   │
           │   Insight               │
-          │                         │
+          │                        │
           │  Pattern Alert check:   │
-          │  shame spiral /         │
-          │  learned helplessness / │
+          │  shame spiral /        │
+          │  learned helplessness /│
           │  avoidance loop         │
-          │                         │
-          │  → framework (1/8)      │
-          │  → explanation (VI)     │
+          │                        │
+          │  → framework (1/8)     │
+          │  → explanation (VI)    │
           └──────────┬──────────────┘
                      │
                      ▼
           ┌─────────────────────────┐
           │   Agent 3: Task         │
-          │   Generator             │
-          │                         │
+          │   Generator              │
+          │                        │
           │  Rule engine (Python):  │
-          │  energy 1-3 → 1 task    │
-          │  energy 4-6 → 2 tasks   │
-          │  energy 7-10 → 3 tasks  │
-          │                         │
-          │  → tasks[] với          │
-          │    Implementation       │
-          │    Intention            │
+          │  energy 1-3 → 1 task  │
+          │  energy 4-6 → 2 tasks │
+          │  energy 7-10 → 3 tasks │
+          │                        │
+          │  → tasks[] với         │
+          │    Implementation      │
+          │    Intention           │
           └──────────┬──────────────┘
                      │
                      ▼
@@ -187,7 +187,84 @@ Light mode tự động điều chỉnh toàn bộ color system. Phần dưới 
 
 ---
 
-## 4. Psychology Framework Engine
+## 4. RAG Lab — Hỏi Đáp Dựa Trên Tài Liệu Nội Bộ
+
+RAG Lab là tính năng cho phép user hỏi AURA về cách hoạt động, các framework tâm lý, và nguyên tắc đằng sau hệ thống — câu trả lời được tạo từ tài liệu nội bộ, không phải kiến thức chung trên internet.
+
+### Cách hoạt động
+
+```
+User question
+    │
+    ▼
+POST /api/rag/query
+    │
+    ▼
+load_rag_documents() — load .md/.txt from backend/data/rag_docs/
+    │
+    ▼
+chunk_document() — split by paragraph, 800 chars, 120 overlap
+    │
+    ▼
+retrieve_relevant_chunks() — lexical BM25-like scoring, top 5
+    │
+    ▼
+_build_context() — gộp chunks thành context string
+    │
+    ▼
+get_rag_prompt() — grounded prompt với rules (tiếng Việt, không bịa)
+    │
+    ▼
+call_gemini() — Gemini 3.1 Flash Lite
+    │
+    ▼
+Return: { answer, sources[], confidence, used_context }
+```
+
+### Retrieval details
+
+| Thành phần | Chi tiết |
+|-----------|----------|
+| **Chunking** | paragraph-aware (split on `\n\n+`), 800 chars max, 120 chars overlap |
+| **Scoring** | keyword match — count(query_terms ∩ chunk_terms) + title boost, normalized 0..1 |
+| **Threshold** | keep chunks with normalized_score ≥ 0.3 |
+| **No vector DB** | intentionally simple cho MVP demo |
+
+### Tài liệu nội bộ
+
+| File | Nội dung |
+|------|----------|
+| `backend/data/rag_docs/aura_overview.md` | Tổng quan AURA, architecture, tech stack, safety features |
+| `backend/data/rag_docs/psychology_frameworks.md` | 8 framework tâm lý chi tiết, trigger conditions, selection logic |
+
+### API spec
+
+```
+POST /api/rag/query
+Body: { "question": "string" }
+Response: {
+  "answer": "string (VI)",
+  "sources": [{ "title", "chunk_id", "preview", "score" }],
+  "confidence": "high | medium | low",
+  "used_context": boolean
+}
+```
+
+### RAG Lab UI
+
+Route: `/rag` — page mới trong navigation (biểu tượng ◎).
+
+Tính năng UI:
+- Input textarea với Ctrl+Enter shortcut
+- Loading state với spinner animation
+- Answer card với confidence badge (màu sắc theo mức độ)
+- Sources card với title + preview (≤200 chars) + score %
+- Empty state với 4 câu hỏi mẫu
+- Error handling graceful
+
+---
+
+## 5. Psychology Framework Engine
 
 Agent 2 chọn 1 trong 8 framework dựa trên trigger condition được phát hiện từ input và lịch sử pattern:
 
@@ -206,7 +283,7 @@ Framework không phải gợi ý — là quyết định của Agent 2 dựa tr�
 
 ---
 
-## 5. Task Generation Rule Engine
+## 6. Task Generation Rule Engine
 
 Agent 3 không được tin tưởng hoàn toàn — LLM có thể vi phạm prompt rules. Rule engine được enforce ở Python code (validate sau khi parse JSON từ Gemini):
 
@@ -222,7 +299,7 @@ Mỗi task kèm **Implementation Intention**: "Khi [trigger], tôi sẽ [action]
 
 ---
 
-## 6. Quyết Định Kỹ Thuật
+## 7. Quyết Định Kỹ Thuật
 
 ### Tại sao Next.js 15 App Router?
 
@@ -246,9 +323,13 @@ Single-user MVP — không có auth, không có multi-user. `profile.json` và `
 
 Auth được build ở Phần 10 rồi bị remove. Lý do: JWT middleware không được enforce trên API routes trong single-user context = ảo giác bảo mật. Nguy hiểm hơn là không có auth, vì người đọc code có thể tin rằng hệ thống đã được bảo vệ khi thực ra không. Tốt hơn là thành thật: đây là local tool chạy trên máy cá nhân.
 
+### Tại sao lexical retrieval cho RAG Lab?
+
+MVP demo không cần vector DB phức tạp. Lexical BM25-like scoring đủ để retrieve relevant chunks từ 2-3 markdown documents. Vector DB là feature v2 khi cần scale lên hàng trăm documents hoặc cần semantic search thực sự.
+
 ---
 
-## 7. Chạy Locally
+## 8. Chạy Locally
 
 **Prerequisites:** Docker Desktop đang chạy, Git.
 
@@ -277,9 +358,93 @@ Lần đầu chạy sẽ mất 2–3 phút để build image. Lần sau: `docker
 docker-compose exec backend python scripts/seed_demo.py
 ```
 
+**Test RAG Lab:**
+
+```bash
+# Test backend API
+curl -X POST http://localhost:8000/api/rag/query \
+  -H "Content-Type: application/json" \
+  -d '{"question":"AURA khác chatbot motivational ở đâu?"}'
+```
+
 ---
 
-## 8. Lessons Learned
+## 9. Folder Structure
+
+```
+AURA_NEW/
+├── .env.example
+├── .env.vercel.example
+├── docker-compose.yml
+├── vercel.json
+├── CLAUDE.md
+├── README.md
+│
+├── .claude/
+│   ├── settings.json
+│   ├── agents/
+│   └── commands/
+│
+├── docs/
+│   ├── plan.md
+│   ├── plan-rag.md
+│   ├── VERCEL_DEPLOY.md
+│   └── screenshots/
+│
+├── backend/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── main.py
+│   ├── agents/
+│   │   ├── _gemini.py
+│   │   ├── wellness_check.py
+│   │   ├── psychology_insight.py
+│   │   ├── task_generator.py
+│   │   ├── reflection.py
+│   │   └── weekly_letter.py
+│   ├── core/
+│   │   ├── memory.py
+│   │   ├── memory_recall.py
+│   │   ├── pattern_alert.py
+│   │   ├── prompts.py
+│   │   ├── pipeline.py
+│   │   └── rag.py
+│   ├── data/
+│   │   ├── profile.json
+│   │   ├── history.json
+│   │   └── rag_docs/
+│   │       ├── aura_overview.md
+│   │       └── psychology_frameworks.md
+│   ├── routers/
+│   │   └── api.py
+│   └── scripts/
+│       └── seed_demo.py
+│
+└── frontend/
+    ├── Dockerfile
+    ├── package.json
+    ├── tailwind.config.ts
+    ├── app/
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   ├── onboarding/page.tsx
+    │   ├── morning/page.tsx
+    │   ├── checklist/page.tsx
+    │   ├── evening/page.tsx
+    │   ├── dashboard/page.tsx
+    │   └── rag/page.tsx          # RAG Lab
+    ├── components/
+    │   ├── Navigation.tsx
+    │   ├── ui/
+    │   └── aura/
+    └── lib/
+        ├── api.ts
+        └── types.ts
+```
+
+---
+
+## 10. Lessons Learned
 
 **1. Subagent review phát hiện vấn đề mà người viết code bỏ qua.**
 
@@ -297,9 +462,13 @@ Pipeline 4 agent mất 8–15 giây. Ban đầu: màn hình trắng + spinner đ
 
 Gemini đôi khi trộn lẫn tiếng Anh vào response tiếng Việt, đặc biệt với thuật ngữ tâm lý học. Phải explicit trong prompt: "Trả lời hoàn toàn bằng tiếng Việt. Không dùng tiếng Anh kể cả với thuật ngữ chuyên ngành — dịch hoặc giải thích bằng tiếng Việt." Và validate output sau khi parse JSON.
 
+**5. RAG Lab: lexical retrieval đủ cho MVP, vector DB là v2.**
+
+Đầu tiên tính năng RAG có vẻ phức tạp, cần vector embeddings, FAISS, ChromaDB... Nhưng với 2 markdown documents và câu hỏi demo portfolio, lexical BM25-like scoring + Gemini grounding cho kết quả tốt mà không cần infrastructure phức tạp. Lesson: giải pháp simple-first, scale chỉ khi cần.
+
 ---
 
-## 9. Known Limitations
+## 11. Known Limitations
 
 > **Trạng thái hiện tại: Single-user MVP**
 >
@@ -320,9 +489,12 @@ Pattern Alert engine có thể override framework, nhưng lần đầu trong ng�
 **Không có notification.**
 Không có reminder buổi sáng/tối. Người dùng phải tự nhớ mở app.
 
+**RAG Lab: tài liệu giới hạn.**
+Hiện tại chỉ có 2 markdown documents (aura_overview.md + psychology_frameworks.md). Nếu hỏi về topics không có trong docs, RAG Lab sẽ trả lời "không tìm thấy" thay vì hallucinate.
+
 ---
 
-## 10. Roadmap v2
+## 12. Roadmap v2
 
 Những gì sẽ được build nếu AURA chuyển từ personal tool sang product:
 
@@ -335,7 +507,8 @@ Những gì sẽ được build nếu AURA chuyển từ personal tool sang prod
 | **Export PDF/CSV** | Weekly report để chia sẻ với therapist hoặc coach |
 | **Pattern analytics** | Dashboard dài hạn — framework nào hiệu quả nhất với user này |
 | **Voice input** | Gõ buổi sáng khi chưa tỉnh ngủ là friction không cần thiết |
+| **RAG vector DB** | ChromaDB hoặc Pinecone khi cần semantic search trên 100+ docs |
 
 ---
 
-*Built as a portfolio project — solo, 10 parts, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker + Railway.*
+*Built as a portfolio project — solo, 10 parts + RAG Lab, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker + Railway.*
