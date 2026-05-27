@@ -4,12 +4,12 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat&logo=nextdotjs&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini_3.1_Flash_Lite_Preview-4285F4?style=flat&logo=google&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_3.1_Flash_Lite-4285F4?style=flat&logo=google&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat&logo=railway&logoColor=white)
 
-**Live demo:** https://aura-one-beta.vercel.app/morning
+**Single-user MVP** — Personal AI life coach for one user at a time.
 
 ---
 
@@ -309,7 +309,7 @@ Server Components giúp giữ API key và data fetch ở server. App Router cho 
 
 Async-native và tích hợp tốt với Google Genai SDK. Pipeline 4 agent chạy tuần tự — mỗi agent là một async function call, dễ test độc lập. Pydantic models enforce output schema của từng agent trước khi truyền sang agent tiếp theo.
 
-### Tại sao Gemini 3.1 Flash Lite Preview?
+### Tại sao Gemini 3.1 Flash Lite?
 
 Latency thấp (~1-2s/agent) và giá phù hợp cho MVP demo. Quan trọng hơn: model đủ mạnh để follow JSON schema nghiêm ngặt với temperature thấp, điều kiện tiên quyết để rule engine Python phía sau không bị bể.
 
