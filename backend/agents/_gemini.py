@@ -7,7 +7,7 @@ import re
 from google import genai
 from google.genai import types
 
-DEFAULT_MODEL = "gemini-3.1-flash-lite-preview"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
 DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash-lite"
 MAX_RETRIES = 3                   # 4 total attempts
 DEFAULT_RETRY_DELAY = 15          # seconds — 429 fallback when no retryDelay hint
