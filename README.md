@@ -7,7 +7,6 @@
 ![Gemini](https://img.shields.io/badge/Gemini_3.1_Flash_Lite-4285F4?style=flat&logo=google&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat&logo=railway&logoColor=white)
 
 **Single-user MVP** — Personal AI life coach for one user at a time.
 
