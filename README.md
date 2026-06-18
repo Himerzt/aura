@@ -511,4 +511,4 @@ Những gì sẽ được build nếu AURA chuyển từ personal tool sang prod
 
 ---
 
-*Built as a portfolio project — solo, 10 parts + RAG Lab, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker + Railway.*
+*Built as a portfolio project — solo, 10 parts + RAG Lab, ~3 tuần. Stack: Next.js 15 + FastAPI + Gemini + Docker*
