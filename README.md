@@ -313,9 +313,9 @@ Async-native và tích hợp tốt với Google Genai SDK. Pipeline 4 agent ch�
 
 Latency thấp (~1-2s/agent) và giá phù hợp cho MVP demo. Quan trọng hơn: model đủ mạnh để follow JSON schema nghiêm ngặt với temperature thấp, điều kiện tiên quyết để rule engine Python phía sau không bị bể.
 
-### Tại sao JSON files thay vì SQLite?
+### Tại sao JSON files thay vì database?
 
-Single-user MVP — không có auth, không có multi-user. `profile.json` và `history.json` đủ cho mọi operation cần thiết. SQLite schema đã được thiết kế (accounts, users, daily_entries, tasks) nhưng không được sử dụng — giữ lại SQLite thêm độ phức tạp mà không thêm giá trị cho demo portfolio.
+Single-user MVP — không có auth, không có multi-user. `profile.json` và `history.json` đủ cho mọi operation cần thiết. Tuy nhiên, để chuẩn bị cho v2, một **Supabase adapter** (`backend/core/storage.py`) đã được viết sẵn — bật bằng env var `DATABASE_PROVIDER=supabase` mà không cần đổi code trong `core/memory.py`. Đây là pattern **provider abstraction** để không phải rewrite khi scale.
 
 Đây là quyết định có chủ đích, không phải thiếu sót kỹ thuật. Multi-user + auth là Roadmap v2.
 
@@ -379,17 +379,28 @@ AURA_NEW/
 ├── vercel.json
 ├── CLAUDE.md
 ├── README.md
+├── LICENSE
+├── INTERVIEW.md
 │
 ├── .claude/
 │   ├── settings.json
 │   ├── agents/
+│   │   └── project-auditor.md
 │   └── commands/
+│       ├── start-session.md
+│       ├── test-agent.md
+│       ├── commit.md
+│       └── debug.md
 │
 ├── docs/
 │   ├── plan.md
 │   ├── plan-rag.md
-│   ├── VERCEL_DEPLOY.md
-│   └── screenshots/
+│   ├── api-spec.md
+│   ├── design-system.md
+│   └── VERCEL_DEPLOY.md
+│
+├── nginx/
+│   └── nginx.conf
 │
 ├── backend/
 │   ├── Dockerfile
@@ -403,12 +414,14 @@ AURA_NEW/
 │   │   ├── reflection.py
 │   │   └── weekly_letter.py
 │   ├── core/
+│   │   ├── limiter.py
 │   │   ├── memory.py
 │   │   ├── memory_recall.py
 │   │   ├── pattern_alert.py
-│   │   ├── prompts.py
 │   │   ├── pipeline.py
-│   │   └── rag.py
+│   │   ├── prompts.py
+│   │   ├── rag.py
+│   │   └── storage.py            # Optional Supabase adapter (DATABASE_PROVIDER=supabase)
 │   ├── data/
 │   │   ├── profile.json
 │   │   ├── history.json
@@ -417,29 +430,68 @@ AURA_NEW/
 │   │       └── psychology_frameworks.md
 │   ├── routers/
 │   │   └── api.py
-│   └── scripts/
-│       └── seed_demo.py
+│   ├── scripts/
+│   │   └── seed_demo.py
+│   └── tests/
+│       ├── test_streak_shield.py
+│       └── test_part9.py
 │
-└── frontend/
-    ├── Dockerfile
-    ├── package.json
-    ├── tailwind.config.ts
-    ├── app/
-    │   ├── layout.tsx
-    │   ├── page.tsx
-    │   ├── onboarding/page.tsx
-    │   ├── morning/page.tsx
-    │   ├── checklist/page.tsx
-    │   ├── evening/page.tsx
-    │   ├── dashboard/page.tsx
-    │   └── rag/page.tsx          # RAG Lab
-    ├── components/
-    │   ├── Navigation.tsx
-    │   ├── ui/
-    │   └── aura/
-    └── lib/
-        ├── api.ts
-        └── types.ts
+├── scripts/                       # Top-level test scripts
+│   ├── test-part6.sh
+│   └── test-part9.py
+│
+├── frontend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── tailwind.config.ts
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── onboarding/page.tsx
+│   │   ├── morning/page.tsx
+│   │   ├── checklist/page.tsx
+│   │   ├── evening/page.tsx
+│   │   ├── dashboard/page.tsx
+│   │   ├── rag/page.tsx          # RAG Lab
+│   │   └── api/[...path]/route.ts # Vercel proxy to backend
+│   ├── components/
+│   │   ├── Navigation.tsx
+│   │   ├── ui/
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── ErrorCard.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   ├── PageTransition.tsx
+│   │   │   └── Skeleton.tsx
+│   │   └── aura/
+│   │       ├── EnergyBar.tsx
+│   │       ├── FrameworkTag.tsx
+│   │       ├── InsightCard.tsx
+│   │       ├── MemoryRecallCard.tsx
+│   │       ├── MilestoneToast.tsx
+│   │       ├── MoodOrb.tsx
+│   │       ├── StreakDisplay.tsx
+│   │       ├── SupportCard.tsx
+│   │       └── TaskCard.tsx
+│   └── lib/
+│       ├── api.ts
+│       ├── types.ts
+│       ├── mood-context.tsx
+│       └── theme-context.tsx
+│
+└── image_demo/                    # Screenshots for README walkthrough
+    ├── img_profile.png
+    ├── img_checkinng_morning_.png
+    ├── img_task_genneratingg.png
+    ├── img_post_task_generation.png
+    ├── img_checklist_done.png
+    ├── img_checklist_take_note.png
+    ├── img_reflection.png
+    ├── aura_respone_reflection.png
+    ├── aura_dashboard.png
+    └── aura_dashboard_light.png
 ```
 
 ---
@@ -475,7 +527,7 @@ Gemini đôi khi trộn lẫn tiếng Anh vào response tiếng Việt, đặc b
 > AURA ở phiên bản hiện tại là **công cụ cá nhân cho một người dùng duy nhất**, không phải SaaS platform. Các giới hạn dưới đây là **quyết định có chủ đích** để tập trung vào core value (pipeline tâm lý học) thay vì infrastructure — không phải thiếu sót kỹ thuật. Roadmap v2 liệt kê đầy đủ hướng mở rộng.
 
 **Không có auth, không có multi-user.**
-Không có login, không có account system, không có phân quyền. Toàn bộ dữ liệu (profile + history) dùng chung trong `backend/data/`. Nếu 2 người cùng dùng link demo cùng lúc, họ sẽ ghi đè dữ liệu của nhau. Demo live trên Railway được thiết kế cho **một người xem tại một thời điểm**. Multi-user + auth là Roadmap v2 — SQLite schema đã được thiết kế sẵn, migration path rõ ràng.
+Không có login, không có account system, không có phân quyền. Toàn bộ dữ liệu (profile + history) dùng chung trong `backend/data/`. Nếu 2 người cùng dùng link demo cùng lúc, họ sẽ ghi đè dữ liệu của nhau. Demo live trên Railway được thiết kế cho **một người xem tại một thời điểm**. Multi-user + auth là Roadmap v2 — Supabase adapter đã có sẵn (`backend/core/storage.py`, kích hoạt bằng `DATABASE_PROVIDER=supabase`), migration path rõ ràng.
 
 **Dữ liệu không persist qua deploy.**
 Railway dùng ephemeral filesystem — mỗi lần deploy lại là `history.json` reset về demo data đã commit trong repo. Với local Docker Compose, dữ liệu tồn tại trong container cho đến khi container bị xoá. Để persist dài hạn cần mount volume.
@@ -501,7 +553,7 @@ Những gì sẽ được build nếu AURA chuyển từ personal tool sang prod
 | Feature | Lý do |
 |---------|-------|
 | **Auth + multi-user** | Mỗi user có profile và history riêng |
-| **SQLite migration** | Schema đã thiết kế sẵn, migration path rõ ràng |
+| **Supabase enable** | Bật sẵn adapter (`DATABASE_PROVIDER=supabase`) + schema đã viết, cần wire up auth |
 | **Streaming response** | Giảm perceived latency từ 10s → hiển thị từng phần |
 | **Push notification** | Reminder buổi sáng/tối theo chronotype của user |
 | **Export PDF/CSV** | Weekly report để chia sẻ với therapist hoặc coach |
